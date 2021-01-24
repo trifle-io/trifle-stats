@@ -1,0 +1,14 @@
+AllCops:
+  TargetRubyVersion: '3.0.0'
+  Exclude:
+    - 'bin/**/*'
+    - 'Rakefile'
+    - 'spec/**/*'
+    - 'Gemfile'
+    - trifle-ruby.gemspec
+
+Style/Documentation:
+  Enabled: false
+#
+# Layout/LineLength:
+#   Max: 80
