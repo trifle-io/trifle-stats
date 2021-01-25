@@ -8,7 +8,7 @@ module Trifle
       class Redis
         attr_accessor :prefix
 
-        def initialize(client = ::Redis.current, prefix: 'bw')
+        def initialize(client = ::Redis.current, prefix: 'trfl')
           @client = client
           @prefix = prefix
         end
