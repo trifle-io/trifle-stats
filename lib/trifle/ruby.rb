@@ -23,7 +23,7 @@ module Trifle
     end
 
     def self.track(key:, at:, values:, configuration: nil)
-      config.ranges.map do |range|
+      (configuration || config).ranges.map do |range|
         Resource.new(
           key: key,
           range: range,
