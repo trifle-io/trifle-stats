@@ -4,7 +4,9 @@ require 'trifle/ruby/driver/redis'
 require 'trifle/ruby/mixins/packer'
 require 'trifle/ruby/nocturnal'
 require 'trifle/ruby/configuration'
-require 'trifle/ruby/resource'
+require 'trifle/ruby/operation'
+require 'trifle/ruby/operations/timeseries/increment'
+require 'trifle/ruby/operations/timeseries/values'
 require 'trifle/ruby/version'
 
 module Trifle
@@ -23,22 +25,22 @@ module Trifle
     end
 
     def self.track(key:, at:, values:, configuration: nil)
-      (configuration || config).ranges.map do |range|
-        Resource.new(
-          key: key,
-          range: range,
-          at: Nocturnal.new(at).send("beginning_of_#{range}"),
-          configuration: configuration
-        ).increment(**values)
-      end
+      Trifle::Ruby::Operations::Timeseries::Increment.new(
+        key: key,
+        at: at,
+        values: values,
+        configuration: configuration
+      ).perform
     end
 
     def self.values(key:, from:, to:, range:, configuration: nil)
-      Nocturnal.timeline(from: from, to: to, range: range).map do |at|
-        Resource.new(
-          key: key, range: range, at: at, configuration: configuration
-        ).values
-      end
+      Trifle::Ruby::Operations::Timeseries::Values.new(
+        key: key,
+        from: from,
+        to: to,
+        range: range,
+        configuration: configuration
+      ).perform
     end
   end
 end
