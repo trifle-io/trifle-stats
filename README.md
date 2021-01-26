@@ -52,7 +52,7 @@ Trifle::Ruby.track(key: 'event::logs', at: Time.now, values: {count: 1, duration
 
 You can also store nested counters like
 ```ruby
-Trifle::Ruby.track(key: 'event::logs', at: Time..now, values: {
+Trifle::Ruby.track(key: 'event::logs', at: Time.now, values: {
   count: 1,
   duration: {
     parsing: 21,
