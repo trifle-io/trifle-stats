@@ -10,8 +10,10 @@ module Trifle
 
       def self.timeline(from:, to:, range:)
         list = []
-        item = new(from).send("beginning_of_#{range}")
-        while item < to
+        from = new(from).send("beginning_of_#{range}")
+        to = new(to).send("beginning_of_#{range}")
+        item = from.dup
+        while item <= to
           list << item
           item = Nocturnal.new(list.last).send("next_#{range}")
         end
