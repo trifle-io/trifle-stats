@@ -106,7 +106,7 @@ Trifle::Ruby.track(key: 'event#checkout', at: Time.zone.now, values: {count: 1},
 
 ### Driver
 
-Driver is a wrapper around existing client libraries that talk to DB or API. It is used to store and retrieve values. You can read more in [Driver Readme](https://github.com/trifle-io/trifle-ruby/blob/main/lib/trifle/ruby/driver/README.md).
+Driver is a wrapper around existing client libraries that talk to DB or API. It is used to store and retrieve values. You can read more in [Driver Readme](https://github.com/trifle-io/trifle-ruby/tree/main/lib/trifle/ruby/driver).
 
 ## Development
 
