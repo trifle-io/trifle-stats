@@ -5,14 +5,6 @@ module Trifle
     module Operations
       module Timeseries
         class Increment < Operation
-          def initialize(key:, at:, values:, configuration: nil)
-            @configuration = configuration
-            @key = key
-            @at = at
-            @values = values
-            super
-          end
-
           def perform
             config.ranges.map do |range|
               at = Nocturnal.new(@at).send("beginning_of_#{range}")
