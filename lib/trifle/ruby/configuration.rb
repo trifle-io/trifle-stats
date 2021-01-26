@@ -28,6 +28,12 @@ module Trifle
         @ranges & track_ranges
       end
 
+      def driver
+        raise DriverNotFound if @driver.nil?
+
+        @driver
+      end
+
       private
 
       def blank?(obj)

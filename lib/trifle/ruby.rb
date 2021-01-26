@@ -10,6 +10,7 @@ require 'trifle/ruby/version'
 module Trifle
   module Ruby
     class Error < StandardError; end
+    class DriverNotFound < Error; end
 
     def self.config
       @config ||= Configuration.new
@@ -21,20 +22,22 @@ module Trifle
       config
     end
 
-    def self.track(key:, at:, values:, driver: nil)
+    def self.track(key:, at:, values:, configuration: nil)
       config.ranges.map do |range|
         Resource.new(
           key: key,
           range: range,
           at: Nocturnal.new(at).send("beginning_of_#{range}"),
-          driver: driver
+          configuration: configuration
         ).increment(**values)
       end
     end
 
-    def self.values_for(key:, from:, to:, range:, driver: nil)
+    def self.values(key:, from:, to:, range:, configuration: nil)
       Nocturnal.timeline(from: from, to: to, range: range).map do |at|
-        Resource.new(key: key, range: range, at: at, driver: driver).values
+        Resource.new(
+          key: key, range: range, at: at, configuration: configuration
+        ).values
       end
     end
   end
