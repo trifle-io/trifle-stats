@@ -103,6 +103,11 @@ Trifle::Ruby.track(key: 'event#checkout', at: Time.zone.now, values: {count: 1},
 
 Trifle::Ruby.track(key: 'event#checkout', at: Time.zone.now, values: {count: 1}, configuration: mongo_configuration)
 ```
+
+### Driver
+
+Driver is a wrapper around existing client libraries that talk to DB or API. It is used to store and retrieve values. You can read more in [Driver Readme](https://github.com/trifle-io/trifle-ruby/blob/main/lib/trifle/ruby/driver/README.md).
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

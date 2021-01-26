@@ -3,7 +3,6 @@
 module Trifle
   module Ruby
     class Resource
-      include Mixins::Packer
       attr_accessor :key, :range, :at, :configuration
 
       def initialize(key:, range:, at:, configuration: nil)
@@ -18,8 +17,7 @@ module Trifle
       end
 
       def increment(**values)
-        packed = self.class.pack(hash: values)
-        config.driver.inc(key: full_key, **packed)
+        config.driver.inc(key: full_key, **values)
         {
           at => values
         }
@@ -27,9 +25,7 @@ module Trifle
 
       def values
         {
-          at => self.class.unpack(
-            hash: config.driver.get(key: full_key)
-          )
+          at => config.driver.get(key: full_key)
         }
       end
 
