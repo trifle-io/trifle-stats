@@ -41,18 +41,18 @@ Available ranges are `:minute`, `:hour`, `:day`, `:week`, `:month`, `:quarter`, 
 
 Now track your first metrics
 ```ruby
-Trifle::Ruby.track(key: 'event::logs', at: Time.zone.now, values: {count: 1, duration: 2, lines: 241})
+Trifle::Ruby.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 2, lines: 241})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}]
 # or do it few more times
-Trifle::Ruby.track(key: 'event::logs', at: Time.zone.now, values: {count: 1, duration: 1, lines: 56})
+Trifle::Ruby.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 1, lines: 56})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}]
-Trifle::Ruby.track(key: 'event::logs', at: Time.zone.now, values: {count: 1, duration: 5, lines: 361})
+Trifle::Ruby.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 5, lines: 361})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
 ```
 
 You can also store nested counters like
 ```ruby
-Trifle::Ruby.track(key: 'event::logs', at: Time.zone.now, values: {
+Trifle::Ruby.track(key: 'event::logs', at: Time..now, values: {
   count: 1,
   duration: {
     parsing: 21,
@@ -67,7 +67,7 @@ Trifle::Ruby.track(key: 'event::logs', at: Time.zone.now, values: {
 
 Retrieve your values for specific `range`.
 ```ruby
-Trifle::Ruby.values(key: 'event::logs', from: Time.zone.now.beginning_of_day, to: Time.zone.now.end_of_day, range: :day)
+Trifle::Ruby.values(key: 'event::logs', from: Time.now, to: Time.now, range: :day)
 => [{2021-01-25 00:00:00 +0100=>{"count"=>3, "duration"=>8, "lines"=>658}}]
 ```
 
@@ -99,9 +99,9 @@ mongo_configuration.time_zone = 'Asia/Dubai'
 
 You can then pass it into module methods.
 ```ruby
-Trifle::Ruby.track(key: 'event#checkout', at: Time.zone.now, values: {count: 1}, configuration: configuration)
+Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, configuration: configuration)
 
-Trifle::Ruby.track(key: 'event#checkout', at: Time.zone.now, values: {count: 1}, configuration: mongo_configuration)
+Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, configuration: mongo_configuration)
 ```
 
 ### Driver
