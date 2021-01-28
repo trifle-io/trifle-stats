@@ -2,7 +2,7 @@
 
 module Trifle
   module Ruby
-    class Nocturnal
+    class Nocturnal # rubocop:disable Metrics/ClassLength
       DAYS_INTO_WEEK = {
         sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
         thursday: 4, friday: 5, saturday: 6
