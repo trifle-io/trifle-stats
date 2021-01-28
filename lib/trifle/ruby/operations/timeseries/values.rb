@@ -5,14 +5,18 @@ module Trifle
     module Operations
       module Timeseries
         class Values
-          attr_reader :key, :range, :config
+          attr_reader :key, :range
 
           def initialize(**keywords)
             @key = keywords.fetch(:key)
             @from = keywords.fetch(:from)
             @to = keywords.fetch(:to)
             @range = keywords.fetch(:range)
-            @config = keywords[:configuration] || Trifle::Ruby.config
+            @config = keywords[:config]
+          end
+
+          def config
+            @config || Trifle::Ruby.default
           end
 
           def timeline

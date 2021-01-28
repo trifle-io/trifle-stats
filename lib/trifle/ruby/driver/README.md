@@ -48,12 +48,12 @@ irb(main):011:0> c.driver = Dummy.new
 irb(main):012:0> c.track_ranges = [:minute, :hour]
 => [:minute, :hour]
 
-irb(main):013:0> Trifle::Ruby.track(key: 'sample', at: Time.now, values: {count: 1}, configuration: c)
+irb(main):013:0> Trifle::Ruby.track(key: 'sample', at: Time.now, values: {count: 1}, config: c)
 Dumping sample::minute::1611696240 => {:count=>1}
 Dumping sample::hour::1611694800 => {:count=>1}
 => [{2021-01-26 21:24:00 +0000=>{:count=>1}}, {2021-01-26 21:00:00 +0000=>{:count=>1}}]
 
-irb(main):014:0> Trifle::Ruby.values(key: 'sample', from: Time.now, to: Time.now, range: :hour, configuration: c)
+irb(main):014:0> Trifle::Ruby.values(key: 'sample', from: Time.now, to: Time.now, range: :hour, config: c)
 Random for sample::hour::1611694800
 => [{2021-01-26 21:00:00 +0000=>{:count=>405}}]
 ```

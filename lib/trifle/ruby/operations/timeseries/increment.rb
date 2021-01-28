@@ -5,18 +5,22 @@ module Trifle
     module Operations
       module Timeseries
         class Increment
-          attr_reader :key, :values, :config
+          attr_reader :key, :values
 
           def initialize(**keywords)
             @key = keywords.fetch(:key)
             @at = keywords.fetch(:at)
             @values = keywords.fetch(:values)
-            @config = keywords[:configuration] || Trifle::Ruby.config
+            @config = keywords[:config]
+          end
+
+          def config
+            @config || Trifle::Ruby.default
           end
 
           def perform
             config.ranges.map do |range|
-              at = Nocturnal.new(@at).send("beginning_of_#{range}")
+              at = Nocturnal.new(@at, config: config).send(range)
               config.driver.inc(
                 key: [key, range, at.to_i].join(config.separator),
                 **values

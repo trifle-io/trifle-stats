@@ -13,32 +13,32 @@ module Trifle
     class Error < StandardError; end
     class DriverNotFound < Error; end
 
-    def self.config
+    def self.default
       @config ||= Configuration.new
     end
 
     def self.configure
-      yield(config)
+      yield(default)
 
-      config
+      default
     end
 
-    def self.track(key:, at:, values:, configuration: nil)
+    def self.track(key:, at:, values:, config: nil)
       Trifle::Ruby::Operations::Timeseries::Increment.new(
         key: key,
         at: at,
         values: values,
-        configuration: configuration
+        config: config
       ).perform
     end
 
-    def self.values(key:, from:, to:, range:, configuration: nil)
+    def self.values(key:, from:, to:, range:, config: nil)
       Trifle::Ruby::Operations::Timeseries::Values.new(
         key: key,
         from: from,
         to: to,
         range: range,
-        configuration: configuration
+        config: config
       ).perform
     end
   end

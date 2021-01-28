@@ -99,9 +99,9 @@ mongo_configuration.time_zone = 'Asia/Dubai'
 
 You can then pass it into module methods.
 ```ruby
-Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, configuration: configuration)
+Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, config: configuration)
 
-Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, configuration: mongo_configuration)
+Trifle::Ruby.track(key: 'event#checkout', at: Time.now, values: {count: 1}, config: mongo_configuration)
 ```
 
 ### Driver

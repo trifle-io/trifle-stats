@@ -8,21 +8,25 @@ module Trifle
         thursday: 4, friday: 5, saturday: 6
       }.freeze
 
-      def self.timeline(from:, to:, range:)
+      def self.timeline(from:, to:, range:, config: nil)
         list = []
-        from = new(from).send("beginning_of_#{range}")
-        to = new(to).send("beginning_of_#{range}")
+        from = new(from, config: config).send(range)
+        to = new(to, config: config).send(range)
         item = from.dup
         while item <= to
           list << item
-          item = Nocturnal.new(list.last).send("next_#{range}")
+          item = Nocturnal.new(item, config: config).send("next_#{range}")
         end
         list
       end
 
-      def initialize(at)
+      def initialize(at, config: nil)
         @at = at
-        @tz = Trifle::Ruby.config.tz
+        @config = config
+      end
+
+      def config
+        @config || Trifle::Ruby.default
       end
 
       def change(**fractions)
@@ -33,71 +37,76 @@ module Trifle
           fractions.fetch(:hour, @at.hour),
           fractions.fetch(:minute, @at.min),
           0, # second
-          @tz.utc_offset
+          config.tz.utc_offset
         )
       end
 
-      def beginning_of_minute
+      def minute
         change
       end
 
       def next_minute
         Nocturnal.new(
-          beginning_of_minute + 60
-        ).beginning_of_minute
+          minute + 60,
+          config: @config
+        ).minute
       end
 
-      def beginning_of_hour
+      def hour
         change(minute: 0)
       end
 
       def next_hour
         Nocturnal.new(
-          beginning_of_hour + 60 * 60
-        ).beginning_of_hour
+          hour + 60 * 60,
+          config: @config
+        ).hour
       end
 
-      def beginning_of_day
+      def day
         change(hour: 0, minute: 0)
       end
 
       def next_day
         Nocturnal.new(
-          beginning_of_day + 60 * 60 * 24
-        ).beginning_of_day
+          day + 60 * 60 * 24,
+          config: @config
+        ).day
       end
 
-      def beginning_of_week
-        today = beginning_of_day
+      def week
+        today = day
 
         (today.to_date - days_to_week_start).to_time
       end
 
       def next_week
         Nocturnal.new(
-          beginning_of_week + 60 * 60 * 24 * 7
-        ).beginning_of_week
+          week + 60 * 60 * 24 * 7,
+          config: @config
+        ).week
       end
 
       def days_to_week_start
         start_day_number = DAYS_INTO_WEEK.fetch(
-          Trifle::Ruby.config.beginning_of_week
+          config.beginning_of_week
         )
 
         (@at.wday - start_day_number) % 7
       end
 
-      def beginning_of_month
+      def month
         change(day: 1, hour: 0, minute: 0)
       end
 
       def next_month
         Nocturnal.new(
-          beginning_of_month + 60 * 60 * 24 * 31
-        ).beginning_of_month
+          month + 60 * 60 * 24 * 31,
+          config: @config
+        ).month
       end
 
-      def beginning_of_quarter
+      def quarter
         first_quarter_month = @at.month - (2 + @at.month) % 3
 
         change(
@@ -110,18 +119,20 @@ module Trifle
 
       def next_quarter
         Nocturnal.new(
-          beginning_of_quarter + 60 * 60 * 24 * 31 * 3
-        ).beginning_of_quarter
+          quarter + 60 * 60 * 24 * 31 * 3,
+          config: @config
+        ).quarter
       end
 
-      def beginning_of_year
+      def year
         change(month: 1, day: 1, hour: 0, minute: 0)
       end
 
       def next_year
         Nocturnal.new(
-          beginning_of_year + 60 * 60 * 24 * 31 * 12
-        ).beginning_of_year
+          year + 60 * 60 * 24 * 31 * 12,
+          config: @config
+        ).year
       end
     end
   end
