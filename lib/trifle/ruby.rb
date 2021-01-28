@@ -14,7 +14,7 @@ module Trifle
     class DriverNotFound < Error; end
 
     def self.default
-      @config ||= Configuration.new
+      @default ||= Configuration.new
     end
 
     def self.configure
