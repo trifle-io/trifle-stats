@@ -48,7 +48,7 @@ module Trifle
       def next_minute
         Nocturnal.new(
           minute + 60,
-          config: @config
+          config: config
         ).minute
       end
 
@@ -59,7 +59,7 @@ module Trifle
       def next_hour
         Nocturnal.new(
           hour + 60 * 60,
-          config: @config
+          config: config
         ).hour
       end
 
@@ -70,7 +70,7 @@ module Trifle
       def next_day
         Nocturnal.new(
           day + 60 * 60 * 24,
-          config: @config
+          config: config
         ).day
       end
 
@@ -83,7 +83,7 @@ module Trifle
       def next_week
         Nocturnal.new(
           week + 60 * 60 * 24 * 7,
-          config: @config
+          config: config
         ).week
       end
 
@@ -102,7 +102,7 @@ module Trifle
       def next_month
         Nocturnal.new(
           month + 60 * 60 * 24 * 31,
-          config: @config
+          config: config
         ).month
       end
 
@@ -120,7 +120,7 @@ module Trifle
       def next_quarter
         Nocturnal.new(
           quarter + 60 * 60 * 24 * 31 * 3,
-          config: @config
+          config: config
         ).quarter
       end
 
@@ -131,7 +131,7 @@ module Trifle
       def next_year
         Nocturnal.new(
           year + 60 * 60 * 24 * 31 * 12,
-          config: @config
+          config: config
         ).year
       end
     end
