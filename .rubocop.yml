@@ -1,5 +1,9 @@
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
-  TargetRubyVersion: '3.0.0'
+  TargetRubyVersion: '2.6'
   Exclude:
     - 'bin/**/*'
     - 'Rakefile'
@@ -9,6 +13,3 @@ AllCops:
 
 Style/Documentation:
   Enabled: false
-#
-# Layout/LineLength:
-#   Max: 80
