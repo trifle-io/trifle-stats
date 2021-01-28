@@ -25,9 +25,11 @@ module Trifle
 
           def perform
             timeline.map do |at|
-              config.driver.get(
-                key: [key, range, at.to_i].join(config.separator)
-              )
+              {
+                at => config.driver.get(
+                  key: [key, range, at.to_i].join(config.separator)
+                )
+              }
             end
           end
         end
