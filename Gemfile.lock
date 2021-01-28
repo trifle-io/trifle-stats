@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trifle-ruby (3.0.1)
+    trifle-ruby (3.0.2)
       redis (>= 4.2)
       tzinfo (~> 2.0)
 
