@@ -73,6 +73,5 @@ RUN ASDF_RUBY_BUILD_VERSION=v20201225 asdf install ruby ${RUBY_VERSION} \
 
 # throw errors if Gemfile has been modified since Gemfile.lock
 RUN gem install bundler
-RUN bundle config --global frozen 1
 
 CMD ["bash"]
