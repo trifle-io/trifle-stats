@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'Trifle Stats allows you to submit counters and'\
                        'automatically storing them for each range.'\
                        'Supports multiple backend drivers.'
-  spec.homepage      = "https://github.com/trifle-io/trifle-stats"
+  spec.homepage      = "https://trifle.io"
   spec.required_ruby_version = Gem::Requirement.new('>= 2.6')
 
   spec.metadata['homepage_uri'] = spec.homepage
