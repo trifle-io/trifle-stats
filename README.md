@@ -58,19 +58,6 @@ Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duratio
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
 ```
 
-You can also store nested counters like
-```ruby
-Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {
-  count: 1,
-  duration: {
-    parsing: 21,
-    compression: 8,
-    upload: 1
-  },
-  lines: 25432754
-})
-```
-
 ### Get values
 
 Retrieve your values for specific `range`.
