@@ -6,15 +6,17 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Jozef Vaclavik']
   spec.email         = ['jozef@hey.com']
 
-  spec.summary       = 'Simple analytics for tracking events and status counts'
-  spec.description   = 'Trifle Stats allows you to submit counters and'\
-                       'automatically storing them for each range.'\
-                       'Supports multiple backend drivers.'
+  spec.summary       = 'Simple analytics backed by Redis, Postgres, MongoDB, '\
+                       'Google Analytics, Segment, or whatever.'
+  spec.description   = 'Trifle::Stats is a way too simple timeline analytics '\
+                       'that helps you track custom metrics. Automatically '\
+                       'increments counters for each enabled range. '\
+                       'It supports timezones and different week beginning.'
   spec.homepage      = "https://trifle.io"
   spec.required_ruby_version = Gem::Requirement.new('>= 2.6')
 
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = "https://github.com/trifle-io/trifle-stats"
+  spec.metadata['source_code_uri'] = 'https://github.com/trifle-io/trifle-stats'
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
