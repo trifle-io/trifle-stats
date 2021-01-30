@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require 'trifle/ruby/driver/redis'
-require 'trifle/ruby/mixins/packer'
-require 'trifle/ruby/nocturnal'
-require 'trifle/ruby/configuration'
-require 'trifle/ruby/operations/timeseries/increment'
-require 'trifle/ruby/operations/timeseries/values'
-require 'trifle/ruby/version'
+require 'trifle/stats/driver/redis'
+require 'trifle/stats/mixins/packer'
+require 'trifle/stats/nocturnal'
+require 'trifle/stats/configuration'
+require 'trifle/stats/operations/timeseries/increment'
+require 'trifle/stats/operations/timeseries/values'
+require 'trifle/stats/version'
 
 module Trifle
-  module Ruby
+  module Stats
     class Error < StandardError; end
     class DriverNotFound < Error; end
 
@@ -24,7 +24,7 @@ module Trifle
     end
 
     def self.track(key:, at:, values:, config: nil)
-      Trifle::Ruby::Operations::Timeseries::Increment.new(
+      Trifle::Stats::Operations::Timeseries::Increment.new(
         key: key,
         at: at,
         values: values,
@@ -33,7 +33,7 @@ module Trifle
     end
 
     def self.values(key:, from:, to:, range:, config: nil)
-      Trifle::Ruby::Operations::Timeseries::Values.new(
+      Trifle::Stats::Operations::Timeseries::Values.new(
         key: key,
         from: from,
         to: to,

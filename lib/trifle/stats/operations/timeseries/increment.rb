@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Trifle
-  module Ruby
+  module Stats
     module Operations
       module Timeseries
         class Increment
@@ -15,7 +15,7 @@ module Trifle
           end
 
           def config
-            @config || Trifle::Ruby.default
+            @config || Trifle::Stats.default
           end
 
           def perform

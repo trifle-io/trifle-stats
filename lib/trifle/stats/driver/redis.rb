@@ -4,7 +4,7 @@ require 'redis'
 require_relative '../mixins/packer'
 
 module Trifle
-  module Ruby
+  module Stats
     module Driver
       class Redis
         include Mixins::Packer

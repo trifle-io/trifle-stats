@@ -3,7 +3,7 @@
 require 'tzinfo'
 
 module Trifle
-  module Ruby
+  module Stats
     class Configuration
       attr_writer :driver
       attr_accessor :track_ranges, :separator, :time_zone,

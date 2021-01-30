@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Trifle
-  module Ruby
+  module Stats
     class Nocturnal # rubocop:disable Metrics/ClassLength
       DAYS_INTO_WEEK = {
         sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
@@ -26,7 +26,7 @@ module Trifle
       end
 
       def config
-        @config || Trifle::Ruby.default
+        @config || Trifle::Stats.default
       end
 
       def change(**fractions)

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trifle-ruby (3.0.4)
+    trifle-stats (3.0.4)
       redis (>= 4.2)
       tzinfo (~> 2.0)
 
@@ -61,7 +61,7 @@ DEPENDENCIES
   rake (~> 12.0)
   rspec (~> 3.0)
   rubocop (= 1.0.0)
-  trifle-ruby!
+  trifle-stats!
 
 BUNDLED WITH
    2.2.3

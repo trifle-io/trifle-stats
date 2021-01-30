@@ -1,6 +1,6 @@
-RSpec.describe Trifle::Ruby::Mixins::Packer do
+RSpec.describe Trifle::Stats::Mixins::Packer do
   class PackerWrapper
-    include Trifle::Ruby::Mixins::Packer
+    include Trifle::Stats::Mixins::Packer
   end
 
   describe 'Pack' do

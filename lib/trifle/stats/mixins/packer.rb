@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Trifle
-  module Ruby
+  module Stats
     module Mixins
       module Packer
         def self.included(base)

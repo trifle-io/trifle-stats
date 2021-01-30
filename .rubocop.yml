@@ -9,7 +9,7 @@ AllCops:
     - 'Rakefile'
     - 'spec/**/*'
     - 'Gemfile'
-    - trifle-ruby.gemspec
+    - trifle-stats.gemspec
 
 Style/Documentation:
   Enabled: false
