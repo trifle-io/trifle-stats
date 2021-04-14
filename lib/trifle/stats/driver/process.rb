@@ -19,6 +19,14 @@ module Trifle
           end
         end
 
+        def set(key:, **values)
+          self.class.pack(hash: values).each do |k, c|
+            d = @data.fetch(key, {})
+            d[k] = c
+            @data[key] = d
+          end
+        end
+
         def get(key:)
           self.class.unpack(
             hash: @data.fetch(key, {})

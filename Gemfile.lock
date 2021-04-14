@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trifle-stats (0.2.0)
+    trifle-stats (0.2.1)
       redis (>= 4.2)
       tzinfo (~> 2.0)
 
