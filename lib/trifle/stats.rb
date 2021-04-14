@@ -6,6 +6,7 @@ require 'trifle/stats/mixins/packer'
 require 'trifle/stats/nocturnal'
 require 'trifle/stats/configuration'
 require 'trifle/stats/operations/timeseries/increment'
+require 'trifle/stats/operations/timeseries/set'
 require 'trifle/stats/operations/timeseries/values'
 require 'trifle/stats/version'
 
@@ -26,6 +27,15 @@ module Trifle
 
     def self.track(key:, at:, values:, config: nil)
       Trifle::Stats::Operations::Timeseries::Increment.new(
+        key: key,
+        at: at,
+        values: values,
+        config: config
+      ).perform
+    end
+
+    def self.assert(key:, at:, values:, config: nil)
+      Trifle::Stats::Operations::Timeseries::Set.new(
         key: key,
         at: at,
         values: values,

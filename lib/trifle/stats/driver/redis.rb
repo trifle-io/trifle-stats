@@ -23,6 +23,12 @@ module Trifle
           end
         end
 
+        def set(key:, **values)
+          pkey = [@prefix, key].join('::')
+
+          @client.hmset(pkey, *self.class.pack(hash: values))
+        end
+
         def get(key:)
           pkey = [@prefix, key].join('::')
 
