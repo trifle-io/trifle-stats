@@ -1,7 +1,8 @@
 PATH
   remote: .
   specs:
-    trifle-stats (0.2.1)
+    trifle-stats (0.3.0)
+      pg (>= 1.2)
       redis (>= 4.2)
       tzinfo (~> 2.0)
 
@@ -16,6 +17,7 @@ GEM
     parallel (1.20.1)
     parser (3.0.0.0)
       ast (~> 2.4.1)
+    pg (1.2.3)
     rainbow (3.0.0)
     rake (12.3.3)
     redis (4.2.5)

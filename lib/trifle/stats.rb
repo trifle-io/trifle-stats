@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'trifle/stats/driver/redis'
+require 'trifle/stats/driver/postgres'
 require 'trifle/stats/driver/process'
 require 'trifle/stats/mixins/packer'
 require 'trifle/stats/nocturnal'
