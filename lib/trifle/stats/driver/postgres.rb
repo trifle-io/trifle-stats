@@ -39,7 +39,7 @@ module Trifle
 
         def _set_all(key:, **values)
           data = self.class.pack(hash: values)
-          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{values.to_json}') ON CONFLICT (key) DO UPDATE SET data = '#{data.to_json}'" # rubocop:disable Metric/LineLength
+          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{data.to_json}') ON CONFLICT (key) DO UPDATE SET data = '#{data.to_json}'" # rubocop:disable Metric/LineLength
 
           client.exec(query)
         end
