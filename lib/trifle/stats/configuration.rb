@@ -6,11 +6,9 @@ module Trifle
   module Stats
     class Configuration
       attr_writer :driver
-      attr_accessor :track_ranges, :separator, :time_zone,
-                    :beginning_of_week
+      attr_accessor :track_ranges, :time_zone, :beginning_of_week
 
       def initialize
-        @separator = '::'
         @ranges = %i[minute hour day week month quarter year]
         @beginning_of_week = :monday
         @time_zone = 'GMT'

@@ -27,7 +27,7 @@ module Trifle
             timeline.map do |at|
               {
                 at => config.driver.get(
-                  key: [key, range, at.to_i].join(config.separator)
+                  key: [key, range, at.to_i]
                 )
               }
             end

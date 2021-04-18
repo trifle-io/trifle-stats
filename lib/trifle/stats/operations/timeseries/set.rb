@@ -22,7 +22,7 @@ module Trifle
             config.ranges.map do |range|
               at = Nocturnal.new(@at, config: config).send(range)
               config.driver.set(
-                key: [key, range, at.to_i].join(config.separator),
+                key: [key, range, at.to_i],
                 **values
               )
             end
