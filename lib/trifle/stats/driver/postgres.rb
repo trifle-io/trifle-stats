@@ -48,7 +48,7 @@ module Trifle
           pkey = key.join(separator)
 
           data = _get(key: pkey)
-          return nil if data.nil?
+          return {} if data.nil?
 
           self.class.unpack(hash: data)
         end
