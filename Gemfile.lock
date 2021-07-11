@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trifle-stats (0.4.0)
+    trifle-stats (0.4.1)
       mongo (>= 2.14.0)
       pg (>= 1.2)
       redis (>= 4.2)

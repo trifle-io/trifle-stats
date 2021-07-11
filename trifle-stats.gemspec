@@ -12,7 +12,8 @@ Gem::Specification.new do |spec|
                        'that helps you track custom metrics. Automatically '\
                        'increments counters for each enabled range. '\
                        'It supports timezones and different week beginning.'
-  spec.homepage      = "https://trifle.io"
+  spec.homepage      = 'https://trifle.io'
+  spec.licenses      = ['MIT']
   spec.required_ruby_version = Gem::Requirement.new('>= 2.6')
 
   spec.metadata['homepage_uri'] = spec.homepage
