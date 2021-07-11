@@ -33,7 +33,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('rspec', '~> 3.2')
   spec.add_development_dependency('rubocop', '1.0.0')
-  spec.add_runtime_dependency('redis', '>= 4.2')
+
+  spec.add_runtime_dependency('mongo', '>= 2.14.0')
   spec.add_runtime_dependency('pg', '>= 1.2')
+  spec.add_runtime_dependency('redis', '>= 4.2')
   spec.add_runtime_dependency('tzinfo', '~> 2.0')
 end
