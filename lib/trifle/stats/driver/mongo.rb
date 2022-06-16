@@ -44,14 +44,11 @@ module Trifle
         end
 
         def get(keys:)
-          keys.map do |key|
-            pkey = key.join(separator)
+          pkeys = keys.map { |key| key.join(separator) }
+          data = collection.find(key: { '$in' => pkeys })
+          map = data.inject({}) { |o, d| o.merge(d['key'] => d['data']) }
 
-            data = collection.find(key: pkey).limit(1).first
-            next {} if data.nil? || data['data'].nil?
-
-            data['data']
-          end
+          pkeys.map { |pkey| map[pkey] || {} }
         end
 
         private
