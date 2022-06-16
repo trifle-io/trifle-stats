@@ -44,13 +44,15 @@ module Trifle
           client.exec(query)
         end
 
-        def get(key:)
-          pkey = key.join(separator)
+        def get(keys:)
+          keys.map do |key|
+            pkey = key.join(separator)
 
-          data = _get(key: pkey)
-          return {} if data.nil?
+            data = _get(key: pkey)
+            return {} if data.nil?
 
-          self.class.unpack(hash: data)
+            self.class.unpack(hash: data)
+          end
         end
 
         def _get(key:)

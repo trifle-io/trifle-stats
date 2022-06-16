@@ -43,13 +43,15 @@ module Trifle
           }
         end
 
-        def get(key:)
-          pkey = key.join(separator)
+        def get(keys:)
+          keys.map do |key|
+            pkey = key.join(separator)
 
-          data = collection.find(key: pkey).limit(1).first
-          return {} if data.nil? || data['data'].nil?
+            data = collection.find(key: pkey).limit(1).first
+            next {} if data.nil? || data['data'].nil?
 
-          data['data']
+            data['data']
+          end
         end
 
         private

@@ -30,12 +30,14 @@ module Trifle
           client.hmset(pkey, *self.class.pack(hash: values))
         end
 
-        def get(key:)
-          pkey = ([prefix] + key).join(separator)
+        def get(keys:)
+          keys.map do |key|
+            pkey = ([prefix] + key).join(separator)
 
-          self.class.unpack(
-            hash: client.hgetall(pkey)
-          )
+            self.class.unpack(
+              hash: client.hgetall(pkey)
+            )
+          end
         end
       end
     end

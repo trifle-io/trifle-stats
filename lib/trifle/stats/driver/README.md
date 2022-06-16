@@ -4,7 +4,7 @@ Driver is a wrapper class that persists and retrieves values from backend. It ne
 
 - `inc(key:, **values)` method increment values
 - `set(key:, **values)` method set values
-- `get(key:)` method to retrieve values
+- `get(keys:)` method to retrieve values
 
 ## Documentation
 

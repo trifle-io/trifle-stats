@@ -28,10 +28,12 @@ module Trifle
           end
         end
 
-        def get(key:)
-          self.class.unpack(
-            hash: @data.fetch(key.join(@separator), {})
-          )
+        def get(keys:)
+          keys.map do |key|
+            self.class.unpack(
+              hash: @data.fetch(key.join(@separator), {})
+            )
+          end
         end
       end
     end
