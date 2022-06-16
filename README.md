@@ -8,7 +8,7 @@ Simple analytics backed by Redis, Postgres, MongoDB, Google Analytics, Segment, 
 
 `Trifle::Stats` is a _way too_ simple timeline analytics that helps you track custom metrics. Automatically increments counters for each enabled range. It supports timezones and different week beginning.
 
-[^1]: TBH only Redis for now 💔.
+[^1]: TBH only Redis, Postgres and MongoDB for now 💔.
 
 ## Documentation
 
@@ -24,11 +24,22 @@ gem 'trifle-stats'
 
 And then execute:
 
-    $ bundle install
+```sh
+$ bundle install
+```
 
 Or install it yourself as:
 
-    $ gem install trifle-stats
+```sh
+$ gem install trifle-stats
+```
+
+Depending on driver you would like to use, make sure you add required gems into your `Gemfile`.
+```ruby
+gem 'mongo', '>= 2.14.0'
+gem 'pg', '>= 1.2'
+gem 'redis', '>= 4.2'
+```
 
 ## Usage
 
@@ -45,25 +56,72 @@ end
 
 ### Track values
 
-Available ranges are `:minute`, `:hour`, `:day`, `:week`, `:month`, `:quarter`, `:year`.
+Track your first metrics
 
-Now track your first metrics
 ```ruby
 Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 2, lines: 241})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}]
-# or do it few more times
+```
+
+Then do it few more times
+
+```ruby
 Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 1, lines: 56})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}]
 Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 5, lines: 361})
 => [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
 ```
 
-### Get values
+You can also store nested counters like
 
-Retrieve your values for specific `range`.
+```ruby
+Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {
+  count: 1,
+  duration: {
+    parsing: 21,
+    compression: 8,
+    upload: 1
+  },
+  lines: 25432754
+})
+```
+
+#### Get values
+
+Retrieve your values for specific `range`. Adding increments above will return sum of all the values you've tracked.
+
 ```ruby
 Trifle::Stats.values(key: 'event::logs', from: Time.now, to: Time.now, range: :day)
-=> [{2021-01-25 00:00:00 +0100=>{"count"=>3, "duration"=>8, "lines"=>658}}]
+=> {:at=>[2021-01-25 00:00:00 +0200], :values=>[{"count"=>3, "duration"=>8, "lines"=>658}]}
+```
+
+### Assert values
+
+Asserting values works same way like incrementing, but instead of increment, it sets the value. Duh.
+
+Set your first metrics
+
+```ruby
+Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 2, lines: 241})
+=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}]
+```
+
+Then do it few more times
+
+```ruby
+Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 1, lines: 56})
+=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}]
+Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 5, lines: 361})
+=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
+```
+
+#### Get values
+
+Retrieve your values for specific `range`. As you just used `assert` above, it will return latest value you've asserted.
+
+```ruby
+Trifle::Stats.values(key: 'event::logs', from: Time.now, to: Time.now, range: :day)
+=> {:at=>[2021-01-25 00:00:00 +0200], :values=>[{"count"=>1, "duration"=>5, "lines"=>361}]}
 ```
 
 ## Contributing
