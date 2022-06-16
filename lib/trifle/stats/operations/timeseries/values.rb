@@ -24,16 +24,6 @@ module Trifle
           end
 
           def perform
-            timeline.map do |at|
-              {
-                at => config.driver.get(
-                  key: [key, range, at.to_i]
-                )
-              }
-            end
-          end
-
-          def perform
             {
               at: timeline,
               values: config.driver.get(
