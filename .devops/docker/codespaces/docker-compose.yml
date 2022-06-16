@@ -1,0 +1,28 @@
+version: "3.7"
+volumes:
+  shared:
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: password
+  redis:
+    image: redis:latest
+  mongo:
+    image: mongo:latest
+  app:
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    build:
+      context: ../../..
+      shm_size: "4gb"
+      dockerfile: .devops/docker/codespaces/Dockerfile
+    shm_size: "4gb"
+    depends_on:
+      - postgres
+      - redis
+      - mongo
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      REDIS_HOST: redis
+      REDIS_URL: redis://redis:6379
