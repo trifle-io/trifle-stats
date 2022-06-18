@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    trifle-stats (1.0.0.rc1)
+    trifle-stats (1.0.0)
       tzinfo (~> 2.0)
 
 GEM
