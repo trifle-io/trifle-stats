@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'trifle/stats/designator/custom'
+require 'trifle/stats/designator/geometric'
+require 'trifle/stats/designator/linear'
 require 'trifle/stats/driver/mongo'
 require 'trifle/stats/driver/postgres'
 require 'trifle/stats/driver/process'
@@ -43,6 +46,15 @@ module Trifle
         values: values,
         config: config
       ).perform
+    end
+
+    def self.assort(key:, at:, values:, config: nil)
+      Trifle::Stats::Operations::Timeseries::Classify.new(
+        key: key,
+        at: at,
+        values: values,
+        config: config
+      )
     end
 
     def self.values(key:, from:, to:, range:, config: nil)
