@@ -35,7 +35,7 @@ module Trifle
               at = Nocturnal.new(@at, config: config).send(range)
               config.driver.inc(
                 key: [key, range, at.to_i],
-                **values
+                **deep_classify(values)
               )
             end
           end

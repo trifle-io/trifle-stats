@@ -10,6 +10,7 @@ require 'trifle/stats/driver/redis'
 require 'trifle/stats/mixins/packer'
 require 'trifle/stats/nocturnal'
 require 'trifle/stats/configuration'
+require 'trifle/stats/operations/timeseries/classify'
 require 'trifle/stats/operations/timeseries/increment'
 require 'trifle/stats/operations/timeseries/set'
 require 'trifle/stats/operations/timeseries/values'
@@ -54,7 +55,7 @@ module Trifle
         at: at,
         values: values,
         config: config
-      )
+      ).perform
     end
 
     def self.values(key:, from:, to:, range:, config: nil)
