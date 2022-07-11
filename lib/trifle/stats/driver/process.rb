@@ -12,19 +12,23 @@ module Trifle
           @separator = '::'
         end
 
-        def inc(key:, **values)
-          self.class.pack(hash: values).each do |k, c|
-            d = @data.fetch(key.join(@separator), {})
-            d[k] = d[k].to_i + c
-            @data[key.join(@separator)] = d
+        def inc(keys:, **values)
+          keys.map do |key|
+            self.class.pack(hash: values).each do |k, c|
+              d = @data.fetch(key.join(@separator), {})
+              d[k] = d[k].to_i + c
+              @data[key.join(@separator)] = d
+            end
           end
         end
 
-        def set(key:, **values)
-          self.class.pack(hash: values).each do |k, c|
-            d = @data.fetch(key.join(@separator), {})
-            d[k] = c
-            @data[key.join(@separator)] = d
+        def set(keys:, **values)
+          keys.map do |key|
+            self.class.pack(hash: values).each do |k, c|
+              d = @data.fetch(key.join(@separator), {})
+              d[k] = c
+              @data[key.join(@separator)] = d
+            end
           end
         end
 

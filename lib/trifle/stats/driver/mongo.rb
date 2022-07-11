@@ -16,27 +16,27 @@ module Trifle
           @separator = '::'
         end
 
-        def inc(key:, **values)
-          pkey = key.join(separator)
+        def inc(keys:, **values)
+          pkeys = keys.map { |key| key.join(separator) }
 
           collection.bulk_write(
-            [upsert_operation('$inc', pkey: pkey, values: values)]
+            [upsert_operation('$inc', pkeys: pkeys, values: values)]
           )
         end
 
-        def set(key:, **values)
-          pkey = key.join(separator)
+        def set(keys:, **values)
+          pkeys = keys.map { |key| key.join(separator) }
 
           collection.bulk_write(
-            [upsert_operation('$set', pkey: pkey, values: values)]
+            [upsert_operation('$set', pkeys: pkeys, values: values)]
           )
         end
 
-        def upsert_operation(operation, pkey:, values:)
+        def upsert_operation(operation, pkeys:, values:)
           data = self.class.pack(hash: { data: values })
           {
             update_many: {
-              filter: { key: pkey },
+              filter: { key: { '$in' => pkeys } },
               update: { operation => data },
               upsert: true
             }

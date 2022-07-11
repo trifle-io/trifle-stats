@@ -16,11 +16,13 @@ module Trifle
           @separator = '::'
         end
 
-        def inc(key:, **values)
-          pkey = key.join(separator)
+        def inc(keys:, **values)
+          keys.map do |key|
+            pkey = key.join(separator)
 
-          self.class.pack(hash: values).each do |k, c|
-            _inc_one(key: pkey, name: k, value: c)
+            self.class.pack(hash: values).each do |k, c|
+              _inc_one(key: pkey, name: k, value: c)
+            end
           end
         end
 
@@ -31,10 +33,12 @@ module Trifle
           client.exec(query)
         end
 
-        def set(key:, **values)
-          pkey = key.join(separator)
+        def set(keys:, **values)
+          keys.map do |key|
+            pkey = key.join(separator)
 
-          _set_all(key: pkey, **values)
+            _set_all(key: pkey, **values)
+          end
         end
 
         def _set_all(key:, **values)

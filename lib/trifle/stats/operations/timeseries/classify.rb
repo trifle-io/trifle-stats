@@ -30,14 +30,16 @@ module Trifle
             config.designator.designate(value: value).to_s.gsub('.', '_')
           end
 
+          def key_for(range:)
+            at = Nocturnal.new(@at, config: config).send(range)
+            [key, range, at.to_i]
+          end
+
           def perform
-            config.ranges.map do |range|
-              at = Nocturnal.new(@at, config: config).send(range)
-              config.driver.inc(
-                key: [key, range, at.to_i],
-                **deep_classify(values)
-              )
-            end
+            config.driver.inc(
+              keys: config.ranges.map { |range| key_for(range: range) },
+              **deep_classify(values)
+            )
           end
         end
       end

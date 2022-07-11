@@ -16,18 +16,22 @@ module Trifle
           @separator = '::'
         end
 
-        def inc(key:, **values)
-          pkey = ([prefix] + key).join(separator)
+        def inc(keys:, **values)
+          keys.map do |key|
+            pkey = ([prefix] + key).join(separator)
 
-          self.class.pack(hash: values).each do |k, c|
-            client.hincrby(pkey, k, c)
+            self.class.pack(hash: values).each do |k, c|
+              client.hincrby(pkey, k, c)
+            end
           end
         end
 
-        def set(key:, **values)
-          pkey = ([prefix] + key).join(separator)
+        def set(keys:, **values)
+          keys.map do |key|
+            pkey = ([prefix] + key).join(separator)
 
-          client.hmset(pkey, *self.class.pack(hash: values))
+            client.hmset(pkey, *self.class.pack(hash: values))
+          end
         end
 
         def get(keys:)
