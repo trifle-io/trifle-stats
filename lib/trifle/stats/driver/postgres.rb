@@ -65,7 +65,7 @@ module Trifle
           ).to_a.first
           return nil if result.nil?
 
-          JSON.parse(result.try(:fetch, 'data'))
+          JSON.parse(result['data'])
         rescue JSON::ParserError
           nil
         end
