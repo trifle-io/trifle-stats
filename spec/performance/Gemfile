@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+gem 'pg'
+gem 'mongo'
+gem 'redis'
+gem 'trifle-stats', path: '../..'
+gem 'byebug'

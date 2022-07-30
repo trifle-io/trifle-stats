@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+require 'trifle/stats'
+require 'json'
+require_relative 'drivers'
+require 'benchmark'
+
+count = ARGV[0].to_i
+data = JSON.parse(ARGV[1])
+
+puts "Testing #{count}x #{data} increments"
+results = Performance::Drivers.new.configurations.map do |config|
+  now = Time.now
+  write = Benchmark.realtime do
+    count.times do
+      Trifle::Stats.track(key: 'perf_thousand_simple', values: data, at: now, config: config)
+    end
+  end
+
+  read = Benchmark.realtime do
+    count.times do
+      Trifle::Stats.values(key: 'perf_thousand_simple', from: now, to: now, range: :hour, config: config)
+    end
+  end
+
+  {name: config.driver.class.to_s, write: write.round(4), read: read.round(4)}
+end
+
+puts "DRIVER\t\t\t\t\tWRITE\t\tREAD"
+results.each do |result|
+  puts "#{result[:name]}\t\t#{result[:write]}s\t\t#{result[:read]}s"
+end
