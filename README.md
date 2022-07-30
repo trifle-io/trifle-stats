@@ -12,7 +12,7 @@ Simple analytics backed by Redis, Postgres, MongoDB, Google Analytics, Segment, 
 
 ## Documentation
 
-You can find guides and documentation at https://trifle.io/docs/stats
+You can find guides and documentation at https://trifle.io/trifle-stats
 
 ## Installation
 
