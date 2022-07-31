@@ -23,10 +23,10 @@ module Trifle
 
         def inc(keys:, **values)
           data = self.class.pack(hash: values)
-          client.transaction do
+          client.transaction do |c|
             keys.each do |key|
               pkey = key.join(separator)
-              client.execute(inc_query(key: pkey, data: data))
+              c.execute(inc_query(key: pkey, data: data))
             end
           end
         end
@@ -41,10 +41,10 @@ module Trifle
 
         def set(keys:, **values)
           data = self.class.pack(hash: values)
-          client.transaction do
+          client.transaction do |c|
             keys.each do |key|
               pkey = key.join(separator)
-              client.execute(set_query(key: pkey, data: data))
+              c.execute(set_query(key: pkey, data: data))
             end
           end
         end
