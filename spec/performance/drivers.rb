@@ -44,8 +44,7 @@ module Performance
     end
 
     def configurations
-      [mongo_config]
-      # [redis_config, postgres_config, mongo_config, process_config]
+      [redis_config, postgres_config, mongo_config, process_config]
     end
   end
 end

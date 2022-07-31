@@ -20,15 +20,13 @@ module Trifle
           keys.map do |key|
             pkey = key.join(separator)
 
-            self.class.pack(hash: values).each do |k, c|
-              _inc_one(key: pkey, name: k, value: c)
-            end
+            _inc_all(key: pkey, data: self.class.pack(hash: values))
           end
         end
 
-        def _inc_one(key:, name:, value:)
-          data = { name => value }
-          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{data.to_json}') ON CONFLICT (key) DO UPDATE SET data = jsonb_set(to_jsonb(trifle_stats.data), '{#{name}}', (COALESCE(trifle_stats.data->>'#{name}','0')::int + #{value})::text::jsonb)" # rubocop:disable Metric/LineLength
+        def _inc_all(key:, data:)
+          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{data.to_json}') ON CONFLICT (key) DO UPDATE SET data = " + # rubocop:disable Layout/LineLength
+                  data.inject('to_jsonb(trifle_stats.data)') { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (COALESCE(trifle_stats.data->>'#{k}', '0')::int + #{v})::text::jsonb)" } # rubocop:disable Layout/LineLength
 
           client.exec(query)
         end
@@ -37,37 +35,36 @@ module Trifle
           keys.map do |key|
             pkey = key.join(separator)
 
-            _set_all(key: pkey, **values)
+            _set_all(key: pkey, data: self.class.pack(hash: values))
           end
         end
 
-        def _set_all(key:, **values)
-          data = self.class.pack(hash: values)
-          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{data.to_json}') ON CONFLICT (key) DO UPDATE SET data = '#{data.to_json}'" # rubocop:disable Metric/LineLength
+        def _set_all(key:, data:)
+          query = "INSERT INTO trifle_stats(key, data) VALUES ('#{key}', '#{data.to_json}') ON CONFLICT (key) DO UPDATE SET data = " + # rubocop:disable Layout/LineLength
+                  data.inject('to_jsonb(trifle_stats.data)') { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (#{v})::text::jsonb)" } # rubocop:disable Layout/LineLength
 
           client.exec(query)
         end
 
         def get(keys:)
-          keys.map do |key|
-            pkey = key.join(separator)
+          pkeys = keys.map { |key| key.join(separator) }
+          data = _get_all(keys: pkeys)
+          map = data.inject({}) { |o, d| o.merge(d['key'] => d['data']) }
 
-            data = _get(key: pkey)
-            return {} if data.nil?
-
-            self.class.unpack(hash: data)
-          end
+          pkeys.map { |pkey| self.class.unpack(hash: map[pkey]) || {} }
         end
 
-        def _get(key:)
-          result = client.exec_params(
-            "SELECT * FROM #{table_name} WHERE key = $1 LIMIT 1;", [key]
-          ).to_a.first
-          return nil if result.nil?
+        def _get_all(keys:)
+          results = client.exec_params(
+            "SELECT * FROM #{table_name} WHERE key IN ('#{keys.join("', '")}');"
+          ).to_a
 
-          JSON.parse(result['data'])
-        rescue JSON::ParserError
-          nil
+          results.map do |r|
+            r['data'] = JSON.parse(r['data'])
+            r
+          rescue JSON::ParserError
+            r
+          end
         end
       end
     end
