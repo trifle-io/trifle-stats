@@ -64,7 +64,6 @@ module Trifle
           results = client.exec_params(get_query(keys: keys)).to_a
 
           results.map do |r|
-            r['data'] = JSON.parse(r['data'])
             { key: r['key'], data: JSON.parse(r['data']) }
           rescue JSON::ParserError
             { key: r['key'], data: {} }
