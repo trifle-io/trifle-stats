@@ -3,5 +3,6 @@ source "https://rubygems.org"
 gem 'pg'
 gem 'mongo'
 gem 'redis'
+gem 'sqlite3'
 gem 'trifle-stats', path: '../..'
 gem 'byebug'

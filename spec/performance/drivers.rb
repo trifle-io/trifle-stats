@@ -1,6 +1,7 @@
 require 'redis'
 require 'mongo'
 require 'pg'
+require 'sqlite3'
 require 'byebug'
 
 module Performance
@@ -43,8 +44,19 @@ module Performance
       end
     end
 
+    def sqlite_config
+      File.delete('stats.db') if File.exist?('stats.db')
+      driver = Trifle::Stats::Driver::Sqlite.new
+      driver.setup
+
+      Trifle::Stats::Configuration.new.tap do |config|
+        config.driver = driver
+      end
+    end
+
     def configurations
-      [redis_config, postgres_config, mongo_config, process_config]
+      # [redis_config, postgres_config, mongo_config, process_config]
+      [sqlite_config]
     end
   end
 end

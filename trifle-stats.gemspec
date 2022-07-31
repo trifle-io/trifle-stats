@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('byebug', '>= 0')
   spec.add_development_dependency('dotenv')
   spec.add_development_dependency('mongo', '>= 2.14.0')
+  spec.add_development_dependency('sqlite3', '>= 1.4.4')
   spec.add_development_dependency('pg', '>= 1.2')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('redis', '>= 4.2')

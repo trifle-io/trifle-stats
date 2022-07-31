@@ -49,6 +49,7 @@ GEM
     rubocop-ast (1.4.1)
       parser (>= 2.7.1.5)
     ruby-progressbar (1.11.0)
+    sqlite3 (1.4.4)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
     unicode-display_width (1.7.0)
@@ -67,6 +68,7 @@ DEPENDENCIES
   redis (>= 4.2)
   rspec (~> 3.0)
   rubocop (= 1.0.0)
+  sqlite3 (>= 1.4.4)
   trifle-stats!
 
 BUNDLED WITH
