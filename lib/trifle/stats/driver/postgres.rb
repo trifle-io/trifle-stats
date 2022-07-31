@@ -17,10 +17,11 @@ module Trifle
         end
 
         def inc(keys:, **values)
+          data = self.class.pack(hash: values)
           keys.map do |key|
             pkey = key.join(separator)
 
-            _inc_all(key: pkey, data: self.class.pack(hash: values))
+            _inc_all(key: pkey, data: data)
           end
         end
 
@@ -32,10 +33,11 @@ module Trifle
         end
 
         def set(keys:, **values)
+          data = self.class.pack(hash: values)
           keys.map do |key|
             pkey = key.join(separator)
 
-            _set_all(key: pkey, data: self.class.pack(hash: values))
+            _set_all(key: pkey, data: data)
           end
         end
 
@@ -51,7 +53,7 @@ module Trifle
           data = _get_all(keys: pkeys)
           map = data.inject({}) { |o, d| o.merge(d['key'] => d['data']) }
 
-          pkeys.map { |pkey| self.class.unpack(hash: map[pkey]) || {} }
+          pkeys.map { |pkey| self.class.unpack(hash: map.fetch(pkey, {})) }
         end
 
         def _get_all(keys:)
