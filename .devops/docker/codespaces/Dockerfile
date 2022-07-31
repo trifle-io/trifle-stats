@@ -1,1 +1,1 @@
-FROM trifle/environment:1.0.2
+FROM trifle/environment:1.0.4
