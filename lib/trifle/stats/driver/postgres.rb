@@ -16,6 +16,10 @@ module Trifle
           @separator = '::'
         end
 
+        def self.setup!(client = PG::Connection.new, table_name: 'trifle_stats')
+          client.exec("CREATE TABLE #{table_name} (key VARCHAR(255) PRIMARY KEY, data JSONB NOT NULL DEFAULT '{}'::jsonb)") # rubocop:disable Layout/LineLength
+        end
+
         def inc(keys:, **values)
           data = self.class.pack(hash: values)
           client.transaction do |c|

@@ -18,8 +18,7 @@ module Performance
     def mongo_config
       client = Mongo::Client.new('mongodb://mongo:27017/stats')
       client[:trifle_stats].drop
-      client[:trifle_stats].create
-      client[:trifle_stats].indexes.create_one({key: 1}, unique: true)
+      Trifle::Stats::Driver::Mongo.setup!(client)
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Mongo.new(client)
@@ -31,7 +30,7 @@ module Performance
       client.exec('DROP DATABASE STATS;') rescue ''
       client.exec('CREATE DATABASE STATS;')
       client = PG.connect('postgresql://postgres:password@postgres:5432/stats')
-      client.exec("CREATE TABLE trifle_stats (key VARCHAR(255) PRIMARY KEY, data JSONB NOT NULL DEFAULT '{}'::jsonb)")
+      Trifle::Stats::Driver::Postgres.setup!(client)
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Postgres.new(client)
@@ -46,11 +45,10 @@ module Performance
 
     def sqlite_config
       File.delete('stats.db') if File.exist?('stats.db')
-      driver = Trifle::Stats::Driver::Sqlite.new
-      driver.setup
+      Trifle::Stats::Driver::Sqlite.setup!
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = driver
+        config.driver = Trifle::Stats::Driver::Sqlite.new
       end
     end
 

@@ -16,7 +16,7 @@ module Trifle
           @separator = '::'
         end
 
-        def setup
+        def self.setup!(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats')
           client.execute("CREATE TABLE #{table_name} (key varchar(255), data json);")
           client.execute("CREATE UNIQUE INDEX idx_#{table_name}_key ON #{table_name} (key);")
         end

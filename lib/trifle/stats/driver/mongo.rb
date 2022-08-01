@@ -16,6 +16,11 @@ module Trifle
           @separator = '::'
         end
 
+        def self.setup!(client, collection_name: 'trifle_stats')
+          client[collection_name].create
+          client[collection_name].indexes.create_one({ key: 1 }, unique: true)
+        end
+
         def inc(keys:, **values)
           data = self.class.pack(hash: { data: values })
 
