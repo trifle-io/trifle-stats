@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'pg'
 require_relative '../mixins/packer'
 
 module Trifle
