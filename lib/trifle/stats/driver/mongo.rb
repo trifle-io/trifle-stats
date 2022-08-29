@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'mongo'
 require_relative '../mixins/packer'
 
 module Trifle

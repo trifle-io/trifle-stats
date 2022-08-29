@@ -49,6 +49,7 @@ GEM
     rubocop-ast (1.4.1)
       parser (>= 2.7.1.5)
     ruby-progressbar (1.11.0)
+    sqlite (1.0.2)
     sqlite3 (1.4.4)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
@@ -62,12 +63,13 @@ DEPENDENCIES
   bundler (~> 2.1)
   byebug
   dotenv
-  mongo (>= 2.14.0)
-  pg (>= 1.2)
+  mongo
+  pg
   rake (~> 12.0)
-  redis (>= 4.2)
+  redis
   rspec (~> 3.0)
   rubocop (= 1.0.0)
+  sqlite
   sqlite3 (>= 1.4.4)
   trifle-stats!
 
