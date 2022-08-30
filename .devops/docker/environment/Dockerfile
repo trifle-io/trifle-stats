@@ -21,6 +21,7 @@ RUN apt-get update -q \
     libssl-dev \
     libreadline-dev \
     zlib1g-dev \
+    libsqlite3-dev \
     tmux \
     htop \
     vim \
