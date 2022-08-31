@@ -46,8 +46,8 @@ RUN git clone https://github.com/asdf-vm/asdf.git ${ASDF_ROOT} --branch v0.10.0
 RUN asdf plugin-add ruby https://github.com/asdf-vm/asdf-ruby.git
 
 # install ruby
-ENV RUBY_VERSION 3.0.0
-RUN ASDF_RUBY_BUILD_VERSION=v20201225 asdf install ruby ${RUBY_VERSION} \
+ENV RUBY_VERSION 3.1.0
+RUN asdf install ruby ${RUBY_VERSION} \
   && asdf global ruby ${RUBY_VERSION}
 
 RUN gem install bundler
