@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require 'trifle/stats/mixins/packer'
+require 'trifle/stats/aggregator/max'
+require 'trifle/stats/aggregator/min'
+require 'trifle/stats/aggregator/sum'
 require 'trifle/stats/designator/custom'
 require 'trifle/stats/designator/geometric'
 require 'trifle/stats/designator/linear'
@@ -8,7 +12,7 @@ require 'trifle/stats/driver/postgres'
 require 'trifle/stats/driver/process'
 require 'trifle/stats/driver/redis'
 require 'trifle/stats/driver/sqlite'
-require 'trifle/stats/mixins/packer'
+require 'trifle/stats/formatter/series'
 require 'trifle/stats/nocturnal'
 require 'trifle/stats/configuration'
 require 'trifle/stats/operations/timeseries/classify'
