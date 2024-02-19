@@ -26,7 +26,7 @@ module Trifle
             hash.inject({}) do |out, (key, v)|
               deep_merge(
                 out,
-                key.split('.').reverse.inject(v.to_i) { |o, k| { k => o } }
+                key.split('.').reverse.inject(v.to_f) { |o, k| { k => o } }
               )
             end
           end
@@ -44,6 +44,19 @@ module Trifle
               else
                 other_val
               end
+            end
+          end
+
+          def normalize(object)
+            case object
+            when Hash
+              object.each_with_object({}) do |(key, value), result|
+                result[key.to_s] = normalize(value)
+              end
+            when Array
+              object.map { |v| normalize(v) }
+            else
+              object
             end
           end
         end

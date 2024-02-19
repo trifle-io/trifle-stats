@@ -1,4 +1,5 @@
 version: "3.7"
+name: "stats"
 services:
   postgres:
     image: postgres:latest
@@ -22,6 +23,8 @@ services:
       PGUSER: postgres
       REDIS_HOST: redis
       REDIS_URL: redis://redis:6379
+    expose:
+      - 4000
     volumes:
       - ../../..:/workspaces/stats
     working_dir: /workspaces/stats
