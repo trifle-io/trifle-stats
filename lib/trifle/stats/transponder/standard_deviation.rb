@@ -23,10 +23,9 @@ module Trifle
             dcount = data.dig(*keys, count)
             dsquare = data.dig(*keys, square)
             dsum = data.dig(*keys, sum)
-            # sd = Math.sqrt((dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)))
             signal = {
               "#{path}.sd" => Math.sqrt(
-                (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1))
+                (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)) # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
               )
             }
             self.class.deep_merge(data, self.class.unpack(hash: signal))
