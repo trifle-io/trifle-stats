@@ -26,7 +26,7 @@ module Trifle
             hash.inject({}) do |out, (key, v)|
               deep_merge(
                 out,
-                key.split('.').reverse.inject(v.to_f) { |o, k| { k => o } }
+                key.split('.').reverse.inject(v) { |o, k| { k => o } }
               )
             end
           end

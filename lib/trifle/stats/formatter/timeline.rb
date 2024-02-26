@@ -3,7 +3,7 @@
 module Trifle
   module Stats
     class Formatter
-      class Series
+      class Timeline
         include Trifle::Stats::Mixins::Packer
 
         attr_reader :series, :path
