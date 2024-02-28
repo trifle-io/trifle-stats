@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'byebug'
-
 module Trifle
   module Stats
     class Transponder
