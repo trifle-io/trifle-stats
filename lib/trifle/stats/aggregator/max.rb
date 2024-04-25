@@ -4,21 +4,10 @@ module Trifle
   module Stats
     class Aggregator
       class Max
-        include Trifle::Stats::Mixins::Packer
+        Trifle::Stats::Series.register_aggregator(:max, self)
 
-        attr_reader :series, :path
-
-        def initialize(series:, path:)
-          @series = series
-          @series[:values] = self.class.normalize(@series[:values])
-          @path = path
-        end
-
-        def keys
-          @keys ||= path.split('.')
-        end
-
-        def aggregate
+        def aggregate(series:, path:)
+          keys = path.split('.')
           result = series[:values].map do |data|
             data.dig(*keys).to_f
           end

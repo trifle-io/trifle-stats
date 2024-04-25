@@ -4,16 +4,9 @@ module Trifle
   module Stats
     class Formatter
       class Timeline
-        include Trifle::Stats::Mixins::Packer
+        Trifle::Stats::Series.register_formatter(:timeline, self)
 
-        attr_reader :series
-
-        def initialize(series:)
-          @series = series
-          @series[:values] = self.class.normalize(@series[:values])
-        end
-
-        def format(path:)
+        def format(series:, path:)
           keys = path.split('.')
           series[:at].map.with_index do |at, i|
             value = series[:values][i].dig(*keys)

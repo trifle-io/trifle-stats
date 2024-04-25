@@ -5,19 +5,17 @@ module Trifle
     class Transponder
       class Average
         include Trifle::Stats::Mixins::Packer
+        Trifle::Stats::Series.register_transponder(:average, self)
 
-        attr_reader :sum, :count
-
-        def initialize(sum: 'sum', count: 'count')
-          @sum = sum
-          @count = count
-        end
-
-        def transpond(series:, path:)
-          keys = path.split('.')
+        def transpond(series:, path:, sum: 'sum', count: 'count') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+          keys = path.to_s.split('.')
+          key = [path, 'average'].compact.join('.')
           series[:values] = series[:values].map do |data|
+            dsum = data.dig(*keys, sum) || BigDecimal(0)
+            dcount = data.dig(*keys, count) || BigDecimal(0)
+            dres = (dsum / dcount)
             signal = {
-              "#{path}.average" => data.dig(*keys, sum) / data.dig(*keys, count)
+              key => dres.nan? ? BigDecimal(0) : dres
             }
             self.class.deep_merge(data, self.class.unpack(hash: signal))
           end

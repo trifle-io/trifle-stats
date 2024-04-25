@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'bigdecimal'
+
 module Trifle
   module Stats
     module Mixins
@@ -56,7 +58,7 @@ module Trifle
             when Array
               object.map { |v| normalize(v) }
             else
-              object
+              BigDecimal(object)
             end
           end
         end

@@ -5,26 +5,20 @@ module Trifle
     class Transponder
       class StandardDeviation
         include Trifle::Stats::Mixins::Packer
+        Trifle::Stats::Series.register_transponder(:standard_deviation, self)
 
-        attr_reader :sum, :count, :square
-
-        def initialize(sum: 'sum', count: 'count', square: 'square')
-          @sum = sum
-          @count = count
-          @square = square
-        end
-
-        def transpond(series:, path:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-          keys = path.split('.')
-
+        def transpond(series:, path:, sum: 'sum', count: 'count', square: 'square') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+          keys = path.to_s.split('.')
+          key = [path, 'sd'].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dcount = data.dig(*keys, count)
-            dsquare = data.dig(*keys, square)
-            dsum = data.dig(*keys, sum)
+            dcount = data.dig(*keys, count) || BigDecimal(0)
+            dsquare = data.dig(*keys, square) || BigDecimal(0)
+            dsum = data.dig(*keys, sum) || BigDecimal(0)
+            dres = Math.sqrt(
+              (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)) # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
+            )
             signal = {
-              "#{path}.sd" => Math.sqrt(
-                (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)) # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
-              )
+              key => dres.nan? ? BigDecimal(0) : dres
             }
             self.class.deep_merge(data, self.class.unpack(hash: signal))
           end

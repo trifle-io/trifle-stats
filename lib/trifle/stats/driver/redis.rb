@@ -9,7 +9,7 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :prefix, :separator
 
-        def initialize(client = ::Redis.current, prefix: 'trfl')
+        def initialize(client, prefix: 'trfl')
           @client = client
           @prefix = prefix
           @separator = '::'
