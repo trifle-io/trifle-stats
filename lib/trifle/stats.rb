@@ -2,6 +2,7 @@
 
 require 'trifle/stats/mixins/packer'
 require 'trifle/stats/series'
+require 'trifle/stats/aggregator/avg'
 require 'trifle/stats/aggregator/max'
 require 'trifle/stats/aggregator/min'
 require 'trifle/stats/aggregator/sum'
