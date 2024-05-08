@@ -22,6 +22,7 @@ require 'trifle/stats/operations/timeseries/increment'
 require 'trifle/stats/operations/timeseries/set'
 require 'trifle/stats/operations/timeseries/values'
 require 'trifle/stats/transponder/average'
+require 'trifle/stats/transponder/ratio'
 require 'trifle/stats/transponder/standard_deviation'
 require 'trifle/stats/version'
 

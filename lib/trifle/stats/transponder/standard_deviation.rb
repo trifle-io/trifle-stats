@@ -7,9 +7,9 @@ module Trifle
         include Trifle::Stats::Mixins::Packer
         Trifle::Stats::Series.register_transponder(:standard_deviation, self)
 
-        def transpond(series:, path:, sum: 'sum', count: 'count', square: 'square') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def transpond(series:, path:, key: 'sd', sum: 'sum', count: 'count', square: 'square') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/ParameterLists
           keys = path.to_s.split('.')
-          key = [path, 'sd'].compact.join('.')
+          key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
             dcount = data.dig(*keys, count) || BigDecimal(0)
             dsquare = data.dig(*keys, square) || BigDecimal(0)
