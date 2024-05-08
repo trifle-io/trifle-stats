@@ -14,9 +14,11 @@ module Trifle
           square = square.to_s.split('.')
           key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dcount = data.dig(*keys, *count) || BigDecimal(0)
-            dsquare = data.dig(*keys, *square) || BigDecimal(0)
-            dsum = data.dig(*keys, *sum) || BigDecimal(0)
+            dcount = data.dig(*keys, *count)
+            dsquare = data.dig(*keys, *square)
+            dsum = data.dig(*keys, *sum)
+            next data unless dcount && dsquare && dsum
+
             dres = Math.sqrt(
               (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)) # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
             )

@@ -13,8 +13,10 @@ module Trifle
           count = count.to_s.split('.')
           key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dsum = data.dig(*keys, *sum) || BigDecimal(0)
-            dcount = data.dig(*keys, *count) || BigDecimal(0)
+            dsum = data.dig(*keys, *sum)
+            dcount = data.dig(*keys, *count)
+            next data unless dsum && dcount
+
             dres = (dsum / dcount)
             signal = {
               key => dres.nan? ? BigDecimal(0) : dres

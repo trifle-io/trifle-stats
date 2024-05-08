@@ -13,8 +13,10 @@ module Trifle
           total = total.to_s.split('.')
           key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dsample = data.dig(*keys, *sample) || BigDecimal(0)
-            dtotal = data.dig(*keys, *total) || BigDecimal(0)
+            dsample = data.dig(*keys, *sample)
+            dtotal = data.dig(*keys, *total)
+            next data unless dsample && dtotal
+
             dres = (dsample / dtotal) * 100
             signal = {
               key => dres.nan? ? BigDecimal(0) : dres
