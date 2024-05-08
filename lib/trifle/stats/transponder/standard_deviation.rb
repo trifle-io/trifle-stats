@@ -9,11 +9,14 @@ module Trifle
 
         def transpond(series:, path:, key: 'sd', sum: 'sum', count: 'count', square: 'square') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/ParameterLists
           keys = path.to_s.split('.')
+          sum = sum.to_s.split('.')
+          count = count.to_s.split('.')
+          square = square.to_s.split('.')
           key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dcount = data.dig(*keys, count) || BigDecimal(0)
-            dsquare = data.dig(*keys, square) || BigDecimal(0)
-            dsum = data.dig(*keys, sum) || BigDecimal(0)
+            dcount = data.dig(*keys, *count) || BigDecimal(0)
+            dsquare = data.dig(*keys, *square) || BigDecimal(0)
+            dsum = data.dig(*keys, *sum) || BigDecimal(0)
             dres = Math.sqrt(
               (dcount * dsquare - dsum * dsum) / (dcount * (dcount - 1)) # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
             )

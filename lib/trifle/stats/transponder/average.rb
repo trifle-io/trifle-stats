@@ -9,10 +9,12 @@ module Trifle
 
         def transpond(series:, path:, key: 'average', sum: 'sum', count: 'count') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           keys = path.to_s.split('.')
+          sum = sum.to_s.split('.')
+          count = count.to_s.split('.')
           key = [path, key].compact.join('.')
           series[:values] = series[:values].map do |data|
-            dsum = data.dig(*keys, sum) || BigDecimal(0)
-            dcount = data.dig(*keys, count) || BigDecimal(0)
+            dsum = data.dig(*keys, *sum) || BigDecimal(0)
+            dcount = data.dig(*keys, *count) || BigDecimal(0)
             dres = (dsum / dcount)
             signal = {
               key => dres.nan? ? BigDecimal(0) : dres
