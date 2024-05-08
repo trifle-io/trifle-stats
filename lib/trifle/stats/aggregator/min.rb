@@ -15,7 +15,9 @@ module Trifle
         end
 
         def sliced(result:, slices:)
-          result[(result.count - (result.count / slices * slices))..].each_slice(result.count / slices).map(&:min)
+          result[(result.count - (result.count / slices * slices))..].each_slice(result.count / slices).map do |slice|
+            slice.compact.min
+          end
         end
       end
     end
