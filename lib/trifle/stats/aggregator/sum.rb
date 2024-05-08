@@ -9,7 +9,7 @@ module Trifle
         def aggregate(series:, path:, slices: 1)
           keys = path.split('.')
           result = series[:values].map do |data|
-            data.dig(*keys).to_f
+            data.dig(*keys)
           end
           sliced(result: result, slices: slices)
         end
