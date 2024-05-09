@@ -16,7 +16,10 @@ module Trifle
 
         def sliced(result:, slices:)
           result[(result.count - (result.count / slices * slices))..].each_slice(result.count / slices).map do |slice|
-            slice.compact.sum / slice.compact.count
+            sum = slice.compact.sum
+            count = slice.compact.count
+
+            count.zero? ? 0 : sum / count
           end
         end
       end
