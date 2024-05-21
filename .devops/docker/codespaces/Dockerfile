@@ -1,1 +1,1 @@
-FROM trifle/environment:1.0.4
+FROM trifle/environment:ruby_3.1.0_1
