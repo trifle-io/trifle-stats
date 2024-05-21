@@ -69,12 +69,13 @@ module Trifle
       ).perform
     end
 
-    def self.values(key:, from:, to:, range:, config: nil)
+    def self.values(key:, from:, to:, range:, skip_blanks: false, config: nil) # rubocop:disable Metrics/ParameterLists
       Trifle::Stats::Operations::Timeseries::Values.new(
         key: key,
         from: from,
         to: to,
         range: range,
+        skip_blanks: skip_blanks,
         config: config
       ).perform
     end

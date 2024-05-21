@@ -13,6 +13,7 @@ module Trifle
             @to = keywords.fetch(:to)
             @range = keywords.fetch(:range)
             @config = keywords[:config]
+            @skip_blanks = keywords[:skip_blanks]
           end
 
           def config
@@ -20,18 +21,35 @@ module Trifle
           end
 
           def timeline
-            Nocturnal.timeline(from: @from, to: @to, range: range)
+            @timeline ||= Nocturnal.timeline(from: @from, to: @to, range: range)
+          end
+
+          def data
+            @data ||= config.driver.get(
+              keys: timeline.map do |at|
+                [key, range, at.to_i]
+              end
+            )
+          end
+
+          def clean_values
+            timeline.each_with_object({ at: [], values: [] }).with_index do |(_at, res), idx|
+              next if data[idx].empty?
+
+              res[:at] << timeline[idx]
+              res[:values] << data[idx]
+            end
+          end
+
+          def values
+            {
+              at: timeline,
+              values: data
+            }
           end
 
           def perform
-            {
-              at: timeline,
-              values: config.driver.get(
-                keys: timeline.map do |at|
-                  [key, range, at.to_i]
-                end
-              )
-            }
+            @skip_blanks ? clean_values : values
           end
         end
       end
