@@ -6,11 +6,17 @@ module Trifle
       class Timeline
         Trifle::Stats::Series.register_formatter(:timeline, self)
 
-        def format(series:, path:)
+        def format(series:, path:, slices: 1, &block)
           keys = path.split('.')
-          series[:at].map.with_index do |at, i|
-            value = series[:values][i].dig(*keys)
-            block_given? ? yield(at, value) : [at, value.to_f]
+          result = series[:at].zip(series[:values].map { |v| v.dig(*keys) })
+          sliced(result: result, slices: slices, block: block)
+        end
+
+        def sliced(result:, slices:, block: nil)
+          result[(result.count - (result.count / slices * slices))..].each_slice(result.count / slices).map do |slice|
+            slice.map do |at, value|
+              block ? block.call(at, value) : [at, value.to_f]
+            end
           end
         end
       end
