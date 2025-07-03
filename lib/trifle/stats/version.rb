@@ -2,6 +2,6 @@
 
 module Trifle
   module Stats
-    VERSION = '1.4.0'
+    VERSION = '1.5.0'
   end
 end

@@ -12,16 +12,29 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Redis.new(client)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
-    def mongo_config
-      client = Mongo::Client.new('mongodb://mongo:27017/stats')
+    def mongo_separated_config
+      client = Mongo::Client.new('mongodb://mongo:27017/stats_separated')
+      client[:trifle_stats].drop
+      Trifle::Stats::Driver::Mongo.setup!(client, joined_identifier: false)
+
+      Trifle::Stats::Configuration.new.tap do |config|
+        config.driver = Trifle::Stats::Driver::Mongo.new(client, joined_identifier: false)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
+      end
+    end
+
+    def mongo_joined_config
+      client = Mongo::Client.new('mongodb://mongo:27017/stats_joined')
       client[:trifle_stats].drop
       Trifle::Stats::Driver::Mongo.setup!(client)
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Mongo.new(client)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
@@ -34,12 +47,14 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Postgres.new(client)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
     def process_config
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Process.new
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
@@ -49,11 +64,12 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Sqlite.new
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
     def configurations
-      [redis_config, postgres_config, mongo_config, process_config, sqlite_config]
+      [redis_config, postgres_config, mongo_separated_config, mongo_joined_config, process_config, sqlite_config]
     end
   end
 end

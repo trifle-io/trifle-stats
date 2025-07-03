@@ -27,7 +27,7 @@ module Trifle
           def data
             @data ||= config.driver.get(
               keys: timeline.map do |at|
-                [key, range, at.to_i]
+                Nocturnal::Key.new(key: key, range: range, at: at)
               end
             )
           end

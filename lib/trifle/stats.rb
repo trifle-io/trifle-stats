@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'trifle/stats/mixins/packer'
+require 'trifle/stats/nocturnal'
 require 'trifle/stats/series'
 require 'trifle/stats/aggregator/avg'
 require 'trifle/stats/aggregator/max'
@@ -16,12 +17,13 @@ require 'trifle/stats/driver/redis'
 require 'trifle/stats/driver/sqlite'
 require 'trifle/stats/formatter/category'
 require 'trifle/stats/formatter/timeline'
-require 'trifle/stats/nocturnal'
 require 'trifle/stats/configuration'
 require 'trifle/stats/operations/timeseries/classify'
 require 'trifle/stats/operations/timeseries/increment'
 require 'trifle/stats/operations/timeseries/set'
 require 'trifle/stats/operations/timeseries/values'
+require 'trifle/stats/operations/status/beam'
+require 'trifle/stats/operations/status/scan'
 require 'trifle/stats/transponder/average'
 require 'trifle/stats/transponder/ratio'
 require 'trifle/stats/transponder/standard_deviation'
@@ -82,6 +84,22 @@ module Trifle
 
     def self.series(**params)
       Trifle::Stats::Series.new(values(**params))
+    end
+
+    def self.beam(key:, at:, values:, config: nil)
+      Trifle::Stats::Operations::Status::Beam.new(
+        key: key,
+        at: at,
+        values: values,
+        config: config
+      ).perform
+    end
+
+    def self.scan(key:, config: nil)
+      Trifle::Stats::Operations::Status::Scan.new(
+        key: key,
+        config: config
+      ).perform
     end
   end
 end

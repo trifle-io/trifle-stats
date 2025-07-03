@@ -3,9 +3,9 @@
 module Trifle
   module Stats
     module Operations
-      module Timeseries
-        class Set
-          attr_reader :key, :values
+      module Status
+        class Beam
+          attr_reader :key, :at, :values
 
           def initialize(**keywords)
             @key = keywords.fetch(:key)
@@ -18,14 +18,9 @@ module Trifle
             @config || Trifle::Stats.default
           end
 
-          def key_for(range:)
-            at = Nocturnal.new(@at, config: config).send(range)
-            Nocturnal::Key.new(key: key, range: range, at: at)
-          end
-
           def perform
-            config.driver.set(
-              keys: config.ranges.map { |range| key_for(range: range) },
+            config.driver.ping(
+              key: Nocturnal::Key.new(key: key, at: at),
               **values
             )
           end

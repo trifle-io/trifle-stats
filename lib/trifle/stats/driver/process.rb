@@ -12,6 +12,10 @@ module Trifle
           @separator = '::'
         end
 
+        def description
+          "#{self.class.name}(J)"
+        end
+
         def inc(keys:, **values)
           keys.map do |key|
             self.class.pack(hash: values).each do |k, c|
@@ -38,6 +42,14 @@ module Trifle
               hash: @data.fetch(key.join(@separator), {})
             )
           end
+        end
+
+        def ping(*)
+          []
+        end
+
+        def scan(*)
+          []
         end
       end
     end

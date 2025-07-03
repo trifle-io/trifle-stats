@@ -32,7 +32,7 @@ module Trifle
 
           def key_for(range:)
             at = Nocturnal.new(@at, config: config).send(range)
-            [key, range, at.to_i]
+            Nocturnal::Key.new(key: key, range: range, at: at)
           end
 
           def perform

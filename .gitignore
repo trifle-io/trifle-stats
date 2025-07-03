@@ -12,3 +12,4 @@
 /.byebug_history
 stats.db
 .DS_Store
+spec/performance/.byebug_history

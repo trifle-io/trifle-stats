@@ -1,7 +1,7 @@
 PATH
   remote: ../..
   specs:
-    trifle-stats (1.3.1)
+    trifle-stats (1.5.0)
       tzinfo (~> 2.0)
 
 GEM
@@ -9,13 +9,13 @@ GEM
   specs:
     bson (4.15.0)
     byebug (11.1.3)
-    concurrent-ruby (1.1.10)
+    concurrent-ruby (1.3.5)
     mongo (2.18.0)
       bson (>= 4.14.1, < 5.0.0)
     pg (1.4.2)
     redis (4.7.1)
     sqlite3 (1.4.4)
-    tzinfo (2.0.5)
+    tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
 
 PLATFORMS

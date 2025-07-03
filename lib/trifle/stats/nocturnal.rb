@@ -3,6 +3,30 @@
 module Trifle
   module Stats
     class Nocturnal # rubocop:disable Metrics/ClassLength
+      class Key
+        attr_reader :key, :range, :at
+        attr_accessor :prefix
+
+        def initialize(key:, range: nil, at: nil)
+          @prefix = nil
+          @key = key
+          @range = range
+          @at = at
+        end
+
+        def join(separator)
+          [prefix, key, range, at&.to_i].compact.join(separator)
+        end
+
+        def identifier(separator)
+          if separator
+            { key: join(separator) }
+          else
+            { key: key, range: range, at: at }.compact
+          end
+        end
+      end
+
       DAYS_INTO_WEEK = {
         sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
         thursday: 4, friday: 5, saturday: 6

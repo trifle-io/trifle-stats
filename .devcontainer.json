@@ -1,6 +1,6 @@
 {
   "dockerComposeFile": ".devops/docker/codespaces/docker-compose.yml",
   "service": "app",
-  "workspaceFolder": "/workplaces/trifle-stats",
+  "workspaceFolder": "/workspaces/trifle-stats",
   "shutdownAction": "stopCompose"
 }

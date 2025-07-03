@@ -15,9 +15,14 @@ module Trifle
           @separator = '::'
         end
 
+        def description
+          "#{self.class.name}(J)"
+        end
+
         def inc(keys:, **values)
           keys.map do |key|
-            pkey = ([prefix] + key).join(separator)
+            key.prefix = prefix
+            pkey = key.join(separator)
 
             self.class.pack(hash: values).each do |k, c|
               client.hincrby(pkey, k, c)
@@ -27,7 +32,8 @@ module Trifle
 
         def set(keys:, **values)
           keys.map do |key|
-            pkey = ([prefix] + key).join(separator)
+            key.prefix = prefix
+            pkey = key.join(separator)
 
             client.hmset(pkey, *self.class.pack(hash: values))
           end
@@ -35,12 +41,21 @@ module Trifle
 
         def get(keys:)
           keys.map do |key|
-            pkey = ([prefix] + key).join(separator)
+            key.prefix = prefix
+            pkey = key.join(separator)
 
             self.class.unpack(
               hash: client.hgetall(pkey)
             )
           end
+        end
+
+        def ping(*)
+          []
+        end
+
+        def scan(*)
+          []
         end
       end
     end

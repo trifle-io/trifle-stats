@@ -7,17 +7,30 @@ module Trifle
     module Driver
       class Mongo
         include Mixins::Packer
-        attr_accessor :client, :collection_name, :separator
+        attr_accessor :client, :collection_name
 
-        def initialize(client, collection_name: 'trifle_stats')
+        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true)
           @client = client
           @collection_name = collection_name
+          @joined_identifier = joined_identifier
           @separator = '::'
         end
 
-        def self.setup!(client, collection_name: 'trifle_stats')
+        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: true)
           client[collection_name].create
-          client[collection_name].indexes.create_one({ key: 1 }, unique: true)
+          if joined_identifier
+            client[collection_name].indexes.create_one({ key: 1 }, unique: true)
+          else
+            client[collection_name].indexes.create_one({ key: 1, range: 1, at: -1 }, unique: true)
+          end
+        end
+
+        def description
+          "#{self.class.name}(#{@joined_identifier ? 'J' : 'S'})"
+        end
+
+        def separator
+          @joined_identifier ? @separator : nil
         end
 
         def inc(keys:, **values)
@@ -25,7 +38,7 @@ module Trifle
 
           collection.bulk_write(
             keys.map do |key|
-              upsert_operation('$inc', pkey: key.join(separator), data: data)
+              upsert_operation('$inc', filter: key.identifier(separator), data: data)
             end
           )
         end
@@ -35,27 +48,53 @@ module Trifle
 
           collection.bulk_write(
             keys.map do |key|
-              upsert_operation('$set', pkey: key.join(separator), data: data)
+              upsert_operation('$set', filter: key.identifier(separator), data: data)
             end
           )
         end
 
-        def upsert_operation(operation, pkey:, data:)
+        def ping(key:, **values)
+          data = self.class.pack(hash: { data: values, at: key.at })
+
+          collection.bulk_write(
+            [
+              upsert_operation('$set', filter: key.identifier(separator), data: data)
+            ]
+          )
+        end
+
+        def upsert_operation(operation, filter:, data:)
           {
             update_many: {
-              filter: { key: pkey },
+              filter: filter,
               update: { operation => data },
               upsert: true
             }
           }
         end
 
-        def get(keys:)
-          pkeys = keys.map { |key| key.join(separator) }
-          data = collection.find(key: { '$in' => pkeys })
-          map = data.inject({}) { |o, d| o.merge(d['key'] => d['data']) }
+        def get(keys:) # rubocop:disable Metrics/AbcSize
+          combinations = keys.map { |key| key.identifier(separator) }
+          data = collection.find('$or' => combinations)
+          map = data.inject({}) do |o, d|
+            o.merge(
+              Nocturnal::Key.new(
+                key: d['key'], range: d['range'], at: d['at']
+              ).identifier(separator) => d['data']
+            )
+          end
 
-          pkeys.map { |pkey| map[pkey] || {} }
+          combinations.map { |combination| map[combination] || {} }
+        end
+
+        def scan(key:)
+          return [] if @joined_identifier
+
+          data = collection.find(
+            **key.identifier(separator)
+          ).sort(at: -1).first # rubocop:disable Style/RedundantSort
+
+          [data['at'], data['data']]
         end
 
         private

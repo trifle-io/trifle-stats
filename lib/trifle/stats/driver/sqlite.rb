@@ -20,6 +20,10 @@ module Trifle
           client.execute("CREATE UNIQUE INDEX idx_#{table_name}_key ON #{table_name} (key);")
         end
 
+        def description
+          "#{self.class.name}(J)"
+        end
+
         def inc(keys:, **values)
           data = self.class.pack(hash: values)
           client.transaction do |c|
@@ -78,6 +82,14 @@ module Trifle
           <<-SQL
             SELECT key, data FROM #{table_name} WHERE key IN ('#{keys.join("', '")}');
           SQL
+        end
+
+        def ping(*)
+          []
+        end
+
+        def scan(*)
+          []
         end
       end
     end
