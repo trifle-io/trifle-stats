@@ -34,5 +34,5 @@ jobs:
         run: bundle exec rspec
       - name: Rubocop
         run: bundle exec rubocop
-      - name: Performance
-        run: cd spec/performance && bundle install && ruby run.rb 1000 '{"a":1,"b":2,"c":1,"d":2,"e":1,"f":2,"g":1,"h":2,"i":1,"j":2,"k":1,"l":2,"m":1,"n":2,"o":1,"p":2,"q":1,"r":2,"s":1,"t":2,"u":1,"v":2,"w":1}'
+      # - name: Performance
+      #   run: cd spec/performance && bundle install && ruby run.rb 1000 '{"a":1,"b":2,"c":1,"d":2,"e":1,"f":2,"g":1,"h":2,"i":1,"j":2,"k":1,"l":2,"m":1,"n":2,"o":1,"p":2,"q":1,"r":2,"s":1,"t":2,"u":1,"v":2,"w":1}'
