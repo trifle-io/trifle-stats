@@ -93,7 +93,8 @@ module Trifle
           data = collection.find(
             **key.identifier(separator)
           ).sort(at: -1).first # rubocop:disable Style/RedundantSort
-
+          return [] if data.nil?
+          
           [data['at'], data['data']]
         end
 
