@@ -9,19 +9,24 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :collection_name
 
-        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true)
+        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil)
           @client = client
           @collection_name = collection_name
           @joined_identifier = joined_identifier
+          @expire_after = expire_after
           @separator = '::'
         end
 
         def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: true)
-          client[collection_name].create
+          collection = client[collection_name]
+          collection.create
           if joined_identifier
-            client[collection_name].indexes.create_one({ key: 1 }, unique: true)
+            collection.indexes.create_one({ key: 1 }, unique: true)
           else
-            client[collection_name].indexes.create_one({ key: 1, range: 1, at: -1 }, unique: true)
+            collection.indexes.create_one({ key: 1, range: 1, at: -1 }, unique: true)
+            if expire_after
+              collection.indexes.create_one({ at: 1 }, expire_after_seconds: expire_after)
+            end
           end
         end
 
@@ -58,7 +63,7 @@ module Trifle
 
           collection.bulk_write(
             [
-              upsert_operation('$set', filter: key.identifier(separator), data: data)
+              upsert_operation('$set', filter: key.identifier(separator).slice(:key), data: data)
             ]
           )
         end
