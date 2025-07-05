@@ -17,17 +17,15 @@ module Trifle
           @separator = '::'
         end
 
-        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: true)
+        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil)
           collection = client[collection_name]
           collection.create
           if joined_identifier
             collection.indexes.create_one({ key: 1 }, unique: true)
           else
             collection.indexes.create_one({ key: 1, range: 1, at: -1 }, unique: true)
-            if expire_after
-              collection.indexes.create_one({ at: 1 }, expire_after_seconds: expire_after)
-            end
           end
+          collection.indexes.create_one({ expire_at: 1 }, expire_after_seconds: 0) if expire_after
         end
 
         def description
@@ -41,38 +39,49 @@ module Trifle
         def inc(keys:, **values)
           data = self.class.pack(hash: { data: values })
 
-          collection.bulk_write(
-            keys.map do |key|
-              upsert_operation('$inc', filter: key.identifier(separator), data: data)
-            end
-          )
+          operations = keys.map do |key|
+            filter = key.identifier(separator)
+            expire_at = @expire_after ? key.at + @expire_after : nil
+
+            upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
+          end
+
+          collection.bulk_write(operations)
         end
 
         def set(keys:, **values)
           data = self.class.pack(hash: { data: values })
 
-          collection.bulk_write(
-            keys.map do |key|
-              upsert_operation('$set', filter: key.identifier(separator), data: data)
-            end
-          )
+          operations = keys.map do |key|
+            filter = key.identifier(separator)
+            expire_at = @expire_after ? key.at + @expire_after : nil
+
+            upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
+          end
+
+          collection.bulk_write(operations)
         end
 
         def ping(key:, **values)
           data = self.class.pack(hash: { data: values, at: key.at })
+          identifier = key.identifier(separator)
+          expire_at = @expire_after ? key.at + @expire_after : nil
 
-          collection.bulk_write(
-            [
-              upsert_operation('$set', filter: key.identifier(separator).slice(:key), data: data)
-            ]
-          )
+          operations = [
+            upsert_operation('$set', filter: identifier.slice(:key), data: data, expire_at: expire_at)
+          ]
+
+          collection.bulk_write(operations)
         end
 
-        def upsert_operation(operation, filter:, data:)
+        def upsert_operation(operation, filter:, data:, expire_at: nil)
+          update = { operation => data }
+          update['$set'] = { expire_at: expire_at } if expire_at
+
           {
             update_many: {
               filter: filter,
-              update: { operation => data },
+              update: update,
               upsert: true
             }
           }
@@ -99,7 +108,7 @@ module Trifle
             **key.identifier(separator)
           ).sort(at: -1).first # rubocop:disable Style/RedundantSort
           return [] if data.nil?
-          
+
           [data['at'], data['data']]
         end
 

@@ -33,7 +33,7 @@ module Performance
       Trifle::Stats::Driver::Mongo.setup!(client)
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = Trifle::Stats::Driver::Mongo.new(client)
+        config.driver = Trifle::Stats::Driver::Mongo.new(client, expire_after: 10)
         config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
