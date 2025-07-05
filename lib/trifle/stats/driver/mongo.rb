@@ -75,16 +75,16 @@ module Trifle
         end
 
         def upsert_operation(operation, filter:, data:, expire_at: nil)
-          update = { operation => data }
-          update['$set'] = { expire_at: expire_at } if expire_at
+          # Merge if $set and $set
+          update_data = operation == '$set' && expire_at ? data.merge(expire_at: expire_at) : data
 
-          {
-            update_many: {
-              filter: filter,
-              update: update,
-              upsert: true
-            }
+          # Add if $inc and $set
+          update = {
+            operation => update_data,
+            **(operation != '$set' && expire_at ? { '$set' => { expire_at: expire_at } } : {})
           }
+
+          { update_many: { filter: filter, update: update, upsert: true } }
         end
 
         def get(keys:) # rubocop:disable Metrics/AbcSize
