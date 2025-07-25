@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require_relative '../mixins/packer'
 
 module Trifle
@@ -56,7 +57,7 @@ module Trifle
           <<-SQL
             INSERT INTO #{table_name} (key, data) values('#{key}', json('#{data.to_json}'))
             ON CONFLICT (key) DO UPDATE SET data =
-            #{data.inject('data') { |o, (k, v)| "json_set(#{o}, '$.#{k}', #{v})" }};
+            #{data.inject('data') { |o, (k, v)| "json_set(#{o}, '$.#{k}', #{v.to_json})" }};
           SQL
         end
 
@@ -65,7 +66,7 @@ module Trifle
           data = get_all(keys: pkeys)
           map = data.inject({}) { |o, d| o.merge(d[:key] => d[:data]) }
 
-          pkeys.map { |pkey| map.fetch(pkey, {}) }
+          pkeys.map { |pkey| self.class.unpack(hash: map.fetch(pkey, {})) }
         end
 
         def get_all(keys:)

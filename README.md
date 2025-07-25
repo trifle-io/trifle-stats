@@ -124,6 +124,37 @@ Trifle::Stats.values(key: 'event::logs', from: Time.now, to: Time.now, range: :d
 => {:at=>[2021-01-25 00:00:00 +0200], :values=>[{"count"=>1, "duration"=>5, "lines"=>361}]}
 ```
 
+## Testing
+
+### Testing Principles
+
+Tests are structured to be simple, isolated, and mirror the class structure. Each test is independent and self-contained.
+
+#### Key Rules:
+
+1. **Keep tests simple and isolated** - Each test should focus on a single class/method
+2. **Independent tests** - Tests should not depend on each other and can be run in any order
+3. **Self-contained setup** - Every test configures its own variables and dependencies
+4. **Single layer testing** - Test only the specific class, not multiple layers of functionality
+5. **Use appropriate stubbing** - When testing operations, stub driver methods. Let driver tests verify driver behavior
+6. **Repeat yourself** - It's okay to repeat setup code for clarity and independence
+
+#### Driver Testing:
+
+- Driver tests use **real database connections** (Redis, PostgreSQL, MongoDB, SQLite)
+- Clean data between tests to ensure isolation
+- Use appropriate test databases (e.g., Redis database 15, test-specific DB names)
+- The **Process driver** is ideal for testing environments as it uses in-memory storage
+
+#### Test Structure:
+
+Tests follow the same structure as the classes they test:
+- `spec/stats/driver/` - Driver class tests
+- `spec/stats/operations/` - Operation class tests  
+- `spec/stats/mixins/` - Mixin tests
+
+This approach makes it easier to see initial configuration and expected results for each test.
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/trifle-io/trifle-stats.

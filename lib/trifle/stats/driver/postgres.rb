@@ -37,7 +37,7 @@ module Trifle
           <<-SQL
             INSERT INTO #{table_name} (key, data) VALUES ('#{key}', '#{data.to_json}')
             ON CONFLICT (key) DO UPDATE SET data =
-            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (COALESCE(trifle_stats.data->>'#{k}', '0')::int + #{v})::text::jsonb)" }};
+            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (COALESCE(#{table_name}.data->>'#{k}', '0')::int + #{v})::text::jsonb)" }};
           SQL
         end
 
@@ -55,7 +55,7 @@ module Trifle
           <<-SQL
             INSERT INTO #{table_name} (key, data) VALUES ('#{key}', '#{data.to_json}')
             ON CONFLICT (key) DO UPDATE SET data =
-            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (#{v})::text::jsonb)" }}
+            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', '#{v.to_json}'::jsonb)" }}
           SQL
         end
 
