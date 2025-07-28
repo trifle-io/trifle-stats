@@ -8,4 +8,4 @@ gem "rspec", "~> 3.0"
 gem "mongo", require: false
 gem "pg", require: false
 gem "redis", require: false
-gem "sqlite", require: false
+gem "sqlite3", require: false
