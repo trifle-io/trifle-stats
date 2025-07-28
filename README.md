@@ -1,18 +1,13 @@
 # Trifle::Stats
 
-[![Gem Version](https://badge.fury.io/rb/trifle-stats.svg)](https://badge.fury.io/rb/trifle-stats)
-![Ruby](https://github.com/trifle-io/trifle-stats/workflows/Ruby/badge.svg?branch=main)
-[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/trifle-io/trifle-stats)
+[![Gem Version](https://badge.fury.io/rb/trifle-stats.svg)](https://rubygems.org/gems/trifle-stats)
+[![Ruby](https://github.com/trifle-io/trifle-stats/workflows/Ruby/badge.svg?branch=main)](https://github.com/trifle-io/trifle-stats)
 
-Simple analytics backed by Redis, Postgres, MongoDB, Google Analytics, Segment, or whatever. [^1]
-
-`Trifle::Stats` is a _way too_ simple timeline analytics that helps you track custom metrics. Automatically increments counters for each enabled range. It supports timezones and different week beginning.
-
-[^1]: TBH only Redis, Postgres and MongoDB for now 💔.
+Simple analytics backed by Redis, Postgres, MongoDB, Google Analytics, Segment, or whatever. It gets you from having bunch of events occuring within few minutes to being able to say what happened on 25th January 2021.
 
 ## Documentation
 
-You can find guides and documentation at https://trifle.io/trifle-stats
+For comprehensive guides, API reference, and examples, visit [trifle.io/trifle-stats-rb](https://trifle.io/trifle-stats-rb)
 
 ## Installation
 
@@ -24,137 +19,90 @@ gem 'trifle-stats'
 
 And then execute:
 
-```sh
+```bash
 $ bundle install
 ```
 
 Or install it yourself as:
 
-```sh
+```bash
 $ gem install trifle-stats
 ```
 
-Depending on driver you would like to use, make sure you add required gems into your `Gemfile`.
-```ruby
-gem 'mongo', '>= 2.14.0'
-gem 'pg', '>= 1.2'
-gem 'redis', '>= 4.2'
-```
+## Quick Start
 
-## Usage
-
-You don't need to use it with Rails, but you still need to run `Trifle::Stats.configure`. If youre running it with Rails, create `config/initializers/trifle-stats.rb` and configure the gem.
+### 1. Configure
 
 ```ruby
+require 'trifle/stats'
+
 Trifle::Stats.configure do |config|
-  config.driver = Trifle::Stats::Driver::Redis.new
-  config.track_ranges = [:hour, :day]
-  config.time_zone = 'Europe/Bratislava'
-  config.beginning_of_week = :monday
+  config.driver = Trifle::Stats::Driver::Redis.new(Redis.new)
+  config.track_ranges = [:minute, :hour, :day, :week, :month, :quarter, :year]
 end
 ```
 
-### Track values
-
-Track your first metrics
+### 2. Track events
 
 ```ruby
-Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 2, lines: 241})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}]
+Trifle::Stats.track(key: 'event::logs', at: Time.now, values: { count: 1, duration: 2.11 })
 ```
 
-Then do it few more times
+### 3. Retrieve values
 
 ```ruby
-Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 1, lines: 56})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}]
-Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {count: 1, duration: 5, lines: 361})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
+Trifle::Stats.values(key: 'event::logs', from: 1.month.ago, to: Time.now, range: :day)
+#=> {:at=>[Wed, 25 Jan 2023 00:00:00 +0000], :values=>[{"count"=>1, "duration"=>2.11}]}
 ```
 
-You can also store nested counters like
+## Drivers
 
-```ruby
-Trifle::Stats.track(key: 'event::logs', at: Time.now, values: {
-  count: 1,
-  duration: {
-    parsing: 21,
-    compression: 8,
-    upload: 1
-  },
-  lines: 25432754
-})
-```
+Trifle::Stats supports multiple backends:
 
-#### Get values
+- **Redis** - Fast, in-memory storage
+- **Postgres** - SQL database with JSONB support  
+- **MongoDB** - Document database
+- **Process** - Thread-safe in-memory storage (development/testing)
+- **Dummy** - No-op driver for disabled analytics
 
-Retrieve your values for specific `range`. Adding increments above will return sum of all the values you've tracked.
+## Features
 
-```ruby
-Trifle::Stats.values(key: 'event::logs', from: Time.now, to: Time.now, range: :day)
-=> {:at=>[2021-01-25 00:00:00 +0200], :values=>[{"count"=>3, "duration"=>8, "lines"=>658}]}
-```
-
-### Assert values
-
-Asserting values works same way like incrementing, but instead of increment, it sets the value. Duh.
-
-Set your first metrics
-
-```ruby
-Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 2, lines: 241})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>2, :lines=>241}}]
-```
-
-Then do it few more times
-
-```ruby
-Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 1, lines: 56})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>1, :lines=>56}}]
-Trifle::Stats.assert(key: 'event::logs', at: Time.now, values: {count: 1, duration: 5, lines: 361})
-=> [{2021-01-25 16:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}, {2021-01-25 00:00:00 +0100=>{:count=>1, :duration=>5, :lines=>361}}]
-```
-
-#### Get values
-
-Retrieve your values for specific `range`. As you just used `assert` above, it will return latest value you've asserted.
-
-```ruby
-Trifle::Stats.values(key: 'event::logs', from: Time.now, to: Time.now, range: :day)
-=> {:at=>[2021-01-25 00:00:00 +0200], :values=>[{"count"=>1, "duration"=>5, "lines"=>361}]}
-```
+- **Multiple time ranges** - Track data across different time periods
+- **Custom aggregators** - Sum, average, min, max with custom logic
+- **Series operations** - Advanced data manipulation and calculations
+- **Performance optimized** - Efficient storage and retrieval patterns
+- **Driver flexibility** - Switch between storage backends easily
 
 ## Testing
 
-### Testing Principles
+Tests are run against all supported drivers. To run the test suite:
 
-Tests are structured to be simple, isolated, and mirror the class structure. Each test is independent and self-contained.
+```bash
+$ bundle exec rspec
+```
 
-#### Key Rules:
+Ensure Redis, Postgres, and MongoDB are running locally. The test suite will handle database setup automatically.
 
-1. **Keep tests simple and isolated** - Each test should focus on a single class/method
-2. **Independent tests** - Tests should not depend on each other and can be run in any order
-3. **Self-contained setup** - Every test configures its own variables and dependencies
-4. **Single layer testing** - Test only the specific class, not multiple layers of functionality
-5. **Use appropriate stubbing** - When testing operations, stub driver methods. Let driver tests verify driver behavior
-6. **Repeat yourself** - It's okay to repeat setup code for clarity and independence
+Tests are meant to be **simple and isolated**. Every test should be **independent** and able to run in any order. Tests should be **self-contained** and set up their own configuration. This makes it easier to debug and maintain the test suite.
 
-#### Driver Testing:
+Use **single layer testing** to focus on testing a specific class or module in isolation. Use **appropriate stubbing** for driver methods when testing higher-level operations.
 
-- Driver tests use **real database connections** (Redis, PostgreSQL, MongoDB, SQLite)
-- Clean data between tests to ensure isolation
-- Use appropriate test databases (e.g., Redis database 15, test-specific DB names)
-- The **Process driver** is ideal for testing environments as it uses in-memory storage
+Driver tests use real database connections for accurate behavior validation. The `Process` driver is preferred for in-memory testing environments.
 
-#### Test Structure:
+**Repeat yourself** in test setup for clarity rather than complex shared setups that can hide dependencies.
 
-Tests follow the same structure as the classes they test:
-- `spec/stats/driver/` - Driver class tests
-- `spec/stats/operations/` - Operation class tests  
-- `spec/stats/mixins/` - Mixin tests
+For performance testing:
 
-This approach makes it easier to see initial configuration and expected results for each test.
+```bash
+$ cd specs/performance
+$ bundle install
+$ ruby run.rb 100 '{"a":1}'
+```
 
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/trifle-io/trifle-stats.
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
