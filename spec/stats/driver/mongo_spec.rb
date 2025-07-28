@@ -1,7 +1,8 @@
 require 'mongo'
 
 RSpec.describe Trifle::Stats::Driver::Mongo do
-  let(:mongo_client) { Mongo::Client.new('mongodb://mongo:27017/trifle_stats_test') }
+  let(:mongo_url) { ENV['MONGODB_URL'] || 'mongodb://mongo:27017/trifle_stats_test' }
+  let(:mongo_client) { Mongo::Client.new(mongo_url) }
   let(:driver) { described_class.new(mongo_client, collection_name: 'test_stats') }
 
   before(:each) do
@@ -11,7 +12,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   end
 
   after(:all) do
-    client = Mongo::Client.new('mongodb://mongo:27017/trifle_stats_test')
+    client = Mongo::Client.new(ENV['MONGODB_URL'] || 'mongodb://mongo:27017/trifle_stats_test')
     client['test_stats'].drop
     client.close
   end

@@ -1,7 +1,7 @@
 require 'pg'
 
 RSpec.describe Trifle::Stats::Driver::Postgres do
-  let(:pg_client) { PG.connect(host: 'postgres', dbname: 'postgres', user: ENV.fetch('POSTGRES_USER', 'postgres'), password: ENV.fetch('POSTGRES_PASSWORD', 'password')) }
+  let(:pg_client) { PG.connect(ENV.fetch('DATABASE_URL', 'postgresql://postgres:password@postgres:5432/postgres')) }
   let(:driver) { described_class.new(pg_client, table_name: 'test_stats') }
 
   before(:each) do
@@ -14,7 +14,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   end
 
   after(:all) do
-    client = PG.connect(host: 'postgres', dbname: 'postgres', user: ENV.fetch('POSTGRES_USER', 'postgres'), password: ENV.fetch('POSTGRES_PASSWORD', 'password'))
+    client = PG.connect(ENV.fetch('DATABASE_URL', 'postgresql://postgres:password@postgres:5432/postgres'))
     client.exec('DROP TABLE IF EXISTS test_stats')
     client.close
   end
