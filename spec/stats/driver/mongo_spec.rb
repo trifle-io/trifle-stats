@@ -6,8 +6,12 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   let(:driver) { described_class.new(mongo_client, collection_name: 'test_stats') }
 
   before(:each) do
-    described_class.setup!(mongo_client, collection_name: 'test_stats')
-    mongo_client['test_stats'].drop
+    # Ensure clean state - drop and recreate collection
+    begin
+      mongo_client['test_stats'].drop
+    rescue Mongo::Error::OperationFailure
+      # Collection doesn't exist, which is fine
+    end
     described_class.setup!(mongo_client, collection_name: 'test_stats')
   end
 
