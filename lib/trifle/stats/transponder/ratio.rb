@@ -11,7 +11,7 @@ module Trifle
           keys = path.to_s.split('.')
           sample = sample.to_s.split('.')
           total = total.to_s.split('.')
-          key = [path, key].compact.join('.')
+          key = path.to_s.empty? ? key : [path, key].join('.')
           series[:values] = series[:values].map do |data|
             dsample = data.dig(*keys, *sample)
             dtotal = data.dig(*keys, *total)

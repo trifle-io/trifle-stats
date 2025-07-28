@@ -12,7 +12,7 @@ module Trifle
           sum = sum.to_s.split('.')
           count = count.to_s.split('.')
           square = square.to_s.split('.')
-          key = [path, key].compact.join('.')
+          key = path.to_s.empty? ? key : [path, key].join('.')
           series[:values] = series[:values].map do |data|
             dcount = data.dig(*keys, *count)
             dsquare = data.dig(*keys, *square)
