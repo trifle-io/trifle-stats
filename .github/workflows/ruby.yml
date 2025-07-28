@@ -61,9 +61,9 @@ jobs:
 
     env:
       # Database configuration
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-      REDIS_URL: redis://localhost:6379/0
-      MONGODB_URL: mongodb://root:password@localhost:27017/test_db?authSource=admin
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+      REDIS_URL: redis://redis:6379/0
+      MONGODB_URL: mongodb://root:password@mongodb:27017/test_db?authSource=admin
 
     steps:
       - uses: actions/checkout@v4
@@ -83,13 +83,13 @@ jobs:
           done
 
           # Wait for Redis
-          until redis-cli -h localhost -p 6379 ping; do
+          until timeout 1 bash -c "</dev/tcp/localhost/6379"; do
             echo "Waiting for Redis..."
             sleep 2
           done
 
           # Wait for MongoDB
-          until mongosh --host localhost:27017 --username root --password password --authenticationDatabase admin --eval "db.adminCommand('ping')"; do
+          until timeout 1 bash -c "</dev/tcp/localhost/27017"; do
             echo "Waiting for MongoDB..."
             sleep 2
           done
@@ -99,14 +99,14 @@ jobs:
           # Create database if needed (adjust based on your setup)
           # bundle exec rails db:create db:migrate
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
 
       - name: Rspec
         run: bundle exec rspec
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379/0
-          MONGODB_URL: mongodb://root:password@localhost:27017/test_db?authSource=admin
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+          REDIS_URL: redis://redis:6379/0
+          MONGODB_URL: mongodb://root:password@mongodb:27017/test_db?authSource=admin
 
       - name: Rubocop
         run: bundle exec rubocop
