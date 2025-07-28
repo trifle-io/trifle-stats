@@ -16,23 +16,100 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      mongodb:
+        image: mongo:6.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+ ports:
+          - 27017:27017
+
     strategy:
       matrix:
         ruby-version: ["3.1"]
 
+    env:
+      # Database configuration
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+      REDIS_URL: redis://redis:6379/0
+      MONGODB_URL: mongodb://root:password@mongodb:27017/test_db?authSource=admin
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
       - name: Set up Ruby
-        # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
-        # change this to (see https://github.com/ruby/setup-ruby#versioning):
-        # uses: ruby/setup-ruby@v1
-        uses: ruby/setup-ruby@473e4d8fe5dd94ee328fdfca9f8c9c7afc9dae5e
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+      - name: Wait for services to be ready
+        run: |
+          # Wait for PostgreSQL
+          until pg_isready -h postgres -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+          # Wait for Redis
+          until redis-cli -h redis ping; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+
+          # Wait for MongoDB
+          until mongosh --host mongodb --username root --password password --authenticationDatabase admin --eval "db.adminCommand('ping')"; do
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+
+      - name: Setup Database
+        run: |
+          # Create database if needed (adjust based on your setup)
+          # bundle exec rails db:create db:migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+
       - name: Rspec
         run: bundle exec rspec
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+          REDIS_URL: redis://redis:6379/0
+          MONGODB_URL: mongodb://root:password@mongodb:27017/test_db?authSource=admin
+
       - name: Rubocop
         run: bundle exec rubocop
+
       # - name: Performance
       #   run: cd spec/performance && bundle install && ruby run.rb 1000 '{"a":1,"b":2,"c":1,"d":2,"e":1,"f":2,"g":1,"h":2,"i":1,"j":2,"k":1,"l":2,"m":1,"n":2,"o":1,"p":2,"q":1,"r":2,"s":1,"t":2,"u":1,"v":2,"w":1}'
