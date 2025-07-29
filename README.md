@@ -60,7 +60,8 @@ Trifle::Stats.values(key: 'event::logs', from: 1.month.ago, to: Time.now, range:
 Trifle::Stats supports multiple backends:
 
 - **Redis** - Fast, in-memory storage
-- **Postgres** - SQL database with JSONB support  
+- **Postgres** - SQL database with JSONB support
+- **SQLite** - SQL database in a file
 - **MongoDB** - Document database
 - **Process** - Thread-safe in-memory storage (development/testing)
 - **Dummy** - No-op driver for disabled analytics
