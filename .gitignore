@@ -13,3 +13,5 @@
 stats.db
 .DS_Store
 spec/performance/.byebug_history
+stats_joined.db
+stats_separated.db

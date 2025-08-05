@@ -38,15 +38,28 @@ module Performance
       end
     end
 
-    def postgres_config
+    def postgres_joined_config
       client = PG.connect('postgresql://postgres:password@postgres:5432')
-      client.exec('DROP DATABASE STATS;') rescue ''
-      client.exec('CREATE DATABASE STATS;')
-      client = PG.connect('postgresql://postgres:password@postgres:5432/stats')
+      client.exec('DROP DATABASE STATS_JOINED;') rescue ''
+      client.exec('CREATE DATABASE STATS_JOINED;')
+      client = PG.connect('postgresql://postgres:password@postgres:5432/stats_joined')
       Trifle::Stats::Driver::Postgres.setup!(client)
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Postgres.new(client)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
+      end
+    end
+
+    def postgres_separated_config
+      client = PG.connect('postgresql://postgres:password@postgres:5432')
+      client.exec('DROP DATABASE STATS_SEPARATED;') rescue ''
+      client.exec('CREATE DATABASE STATS_SEPARATED;')
+      client = PG.connect('postgresql://postgres:password@postgres:5432/stats_separated')
+      Trifle::Stats::Driver::Postgres.setup!(client, joined_identifier: false)
+
+      Trifle::Stats::Configuration.new.tap do |config|
+        config.driver = Trifle::Stats::Driver::Postgres.new(client, joined_identifier: false)
         config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
@@ -58,18 +71,37 @@ module Performance
       end
     end
 
-    def sqlite_config
-      File.delete('stats.db') if File.exist?('stats.db')
-      Trifle::Stats::Driver::Sqlite.setup!
+    def sqlite_joined_config
+      File.delete('stats_joined.db') if File.exist?('stats_joined.db')
+      Trifle::Stats::Driver::Sqlite.setup!(SQLite3::Database.new('stats_joined.db'))
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = Trifle::Stats::Driver::Sqlite.new
+        config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_joined.db'))
         config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
       end
     end
 
-    def configurations
-      [redis_config, postgres_config, mongo_separated_config, mongo_joined_config, process_config, sqlite_config]
+    def sqlite_separated_config
+      File.delete('stats_separated.db') if File.exist?('stats_separated.db')
+      Trifle::Stats::Driver::Sqlite.setup!(SQLite3::Database.new('stats_separated.db'), joined_identifier: false)
+
+      Trifle::Stats::Configuration.new.tap do |config|
+        config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_separated.db'), joined_identifier: false)
+        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
+      end
+    end
+
+   def configurations
+      [
+        redis_config,
+        postgres_separated_config,
+        postgres_joined_config,
+        mongo_separated_config,
+        mongo_joined_config,
+        process_config,
+        sqlite_separated_config,
+        sqlite_joined_config
+      ]
     end
   end
 end

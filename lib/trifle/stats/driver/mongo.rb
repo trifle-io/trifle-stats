@@ -63,6 +63,8 @@ module Trifle
         end
 
         def ping(key:, **values)
+          return [] if @joined_identifier
+
           data = self.class.pack(hash: { data: values, at: key.at })
           identifier = key.identifier(separator)
           expire_at = @expire_after ? key.at + @expire_after : nil
