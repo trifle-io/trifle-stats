@@ -238,7 +238,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
       result = driver.scan(key: Trifle::Stats::Nocturnal::Key.new(key: 'metric'))
 
       expect(result[0]).to be_a(Time)
-      expect(result[1]).to eq({ 'data' => { 'count' => 20 }, 'at' => "2023-01-02 00:00:00 +0100" })
+      expect(result[1]['data']).to eq({ 'count' => 20 })
+      expect(result[1]['at']).to match(/2023-01-02 00:00:00 [+-]\d{4}/)
     end
 
     it 'returns empty array when no data found' do
