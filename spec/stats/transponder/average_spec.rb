@@ -35,7 +35,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
     context 'with standard parameters' do
       it 'calculates average and adds it to the series data' do
         original_series = series.series.dup
-        series.transpond.average(path: 'requests')
+        series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
 
         # Check that averages were calculated correctly (handling BigDecimal format)
         values = series.series[:values]
@@ -50,7 +50,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'handles different path targets independently' do
-        series.transpond.average(path: 'errors')
+        series.transpond.average(sum: 'errors.sum', count: 'errors.count', response: 'errors.average')
 
         # Check that averages were calculated correctly for errors path
         values = series.series[:values]
@@ -64,7 +64,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
 
     context 'with custom key name' do
       it 'uses custom key for the calculated average' do
-        series.transpond.average(path: 'requests', key: 'mean')
+        series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.mean')
 
         expect(series.series[:values].first['requests']['mean'].to_f).to eq(10.0)
         expect(series.series[:values].first['requests']).not_to have_key('average')
@@ -77,7 +77,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
         }
         custom_series = Trifle::Stats::Series.new(custom_series_data)
 
-        custom_series.transpond.average(path: 'metrics', sum: 'total', count: 'num')
+        custom_series.transpond.average(sum: 'metrics.total', count: 'metrics.num', response: 'metrics.average')
 
         expect(custom_series.series[:values].first['metrics']['average'].to_f).to eq(10.0)
       end
@@ -93,7 +93,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       let(:root_series) { Trifle::Stats::Series.new(root_series_data) }
 
       it 'handles empty path correctly' do
-        root_series.transpond.average(path: '')
+        root_series.transpond.average(sum: 'sum', count: 'count', response: 'average')
 
         # When path is empty, key is created directly at root level (same as nil path)
         expect(root_series.series[:values].first['average'].to_f).to eq(10.0)
@@ -101,7 +101,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'handles nil path correctly' do
-        root_series.transpond.average(path: nil)
+        root_series.transpond.average(sum: 'sum', count: 'count', response: 'average')
 
         # When path is nil, the key becomes just 'average' at root level
         expect(root_series.series[:values].first['average'].to_f).to eq(10.0)
@@ -123,7 +123,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       let(:nested_series) { Trifle::Stats::Series.new(nested_series_data) }
 
       it 'calculates average for deeply nested paths' do
-        nested_series.transpond.average(path: 'stats.web.requests')
+        nested_series.transpond.average(sum: 'stats.web.requests.sum', count: 'stats.web.requests.count', response: 'stats.web.requests.average')
 
         expected_value = nested_series.series[:values].first
         expect(expected_value.dig('stats', 'web', 'requests', 'average')).to eq(10.0)
@@ -144,9 +144,9 @@ RSpec.describe Trifle::Stats::Transponder::Average do
         complex_series = Trifle::Stats::Series.new(complex_nested_data)
 
         complex_series.transpond.average(
-          path: 'metrics', 
-          sum: 'totals.value', 
-          count: 'counters.items'
+          sum: 'metrics.totals.value', 
+          count: 'metrics.counters.items',
+          response: 'metrics.average'
         )
 
         expect(complex_series.series[:values].first.dig('metrics', 'average')).to eq(10.0)
@@ -171,7 +171,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       let(:incomplete_series) { Trifle::Stats::Series.new(incomplete_series_data) }
 
       it 'skips calculation when sum is missing' do
-        incomplete_series.transpond.average(path: 'requests')
+        incomplete_series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
 
         expect(incomplete_series.series[:values]).to eq([
           { 'requests' => { 'sum' => 100, 'count' => 10, 'average' => 10.0 } },
@@ -181,7 +181,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'skips calculation when count is missing' do
-        incomplete_series.transpond.average(path: 'requests')
+        incomplete_series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
 
         values = incomplete_series.series[:values]
         expect(values[1]).not_to have_key('average')
@@ -189,7 +189,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'handles completely missing path gracefully' do
-        incomplete_series.transpond.average(path: 'nonexistent')
+        incomplete_series.transpond.average(sum: 'nonexistent.sum', count: 'nonexistent.count', response: 'nonexistent.average')
 
         # Should remain unchanged
         expect(incomplete_series.series[:values]).to eq([
@@ -218,12 +218,12 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       let(:edge_series) { Trifle::Stats::Series.new(edge_case_data) }
 
       it 'handles zero sum correctly' do
-        edge_series.transpond.average(path: 'metrics')
+        edge_series.transpond.average(sum: 'metrics.sum', count: 'metrics.count', response: 'metrics.average')
         expect(edge_series.series[:values][0]['metrics']['average']).to eq(0.0)
       end
 
       it 'handles division by zero gracefully' do
-        edge_series.transpond.average(path: 'metrics')
+        edge_series.transpond.average(sum: 'metrics.sum', count: 'metrics.count', response: 'metrics.average')
         
         # Division by zero should result in NaN, which gets converted to 0
         result = edge_series.series[:values][1]['metrics']['average']
@@ -232,15 +232,15 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'handles negative values correctly' do
-        edge_series.transpond.average(path: 'metrics')
+        edge_series.transpond.average(sum: 'metrics.sum', count: 'metrics.count', response: 'metrics.average')
         expect(edge_series.series[:values][2]['metrics']['average']).to eq(-5.0)
       end
     end
 
     context 'with multiple transponder calls' do
       it 'can apply multiple averages to different paths' do
-        series.transpond.average(path: 'requests')
-        series.transpond.average(path: 'errors', key: 'error_avg')
+        series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
+        series.transpond.average(sum: 'errors.sum', count: 'errors.count', response: 'errors.error_avg')
 
         first_value = series.series[:values].first
         expect(first_value['requests']).to include('average' => 10.0)
@@ -248,10 +248,10 @@ RSpec.describe Trifle::Stats::Transponder::Average do
       end
 
       it 'preserves existing calculated values when adding new ones' do
-        series.transpond.average(path: 'requests')
+        series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
         original_requests_avg = series.series[:values].first['requests']['average']
 
-        series.transpond.average(path: 'errors')
+        series.transpond.average(sum: 'errors.sum', count: 'errors.count', response: 'errors.average')
 
         expect(series.series[:values].first['requests']['average']).to eq(original_requests_avg)
         expect(series.series[:values].first['errors']).to include('average')
@@ -266,7 +266,7 @@ RSpec.describe Trifle::Stats::Transponder::Average do
 
     it 'modifies the series in place' do
       original_object_id = series.series[:values].object_id
-      series.transpond.average(path: 'requests')
+      series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
       
       # The series values array gets replaced, but the series itself is modified
       expect(series.series[:values]).not_to eq(original_object_id) # Object changed
@@ -274,13 +274,13 @@ RSpec.describe Trifle::Stats::Transponder::Average do
     end
 
     it 'returns the modified series for chaining' do
-      result = series.transpond.average(path: 'requests')
+      result = series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
       expect(result).to eq(series.series)
     end
 
     it 'can be combined with other series operations' do
       # Add averages, then aggregate them
-      series.transpond.average(path: 'requests')
+      series.transpond.average(sum: 'requests.sum', count: 'requests.count', response: 'requests.average')
       averages = series.aggregate.sum(path: 'requests.average')
       
       expect(averages).to eq([40.0]) # 10.0 + 10.0 + 10.0 + 10.0

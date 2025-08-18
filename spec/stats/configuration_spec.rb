@@ -3,7 +3,7 @@ RSpec.describe Trifle::Stats::Configuration do
 
   describe '#initialize' do
     it 'sets default values' do
-      expect(configuration.instance_variable_get(:@ranges)).to eq([:minute, :hour, :day, :week, :month, :quarter, :year])
+      expect(configuration.instance_variable_get(:@ranges)).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       expect(configuration.beginning_of_week).to eq(:monday)
       expect(configuration.time_zone).to eq('GMT')
       expect(configuration.designator).to be_nil
@@ -121,7 +121,7 @@ RSpec.describe Trifle::Stats::Configuration do
   describe '#ranges' do
     context 'when track_ranges is not set' do
       it 'returns all default ranges' do
-        expect(configuration.ranges).to eq([:minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 
@@ -129,7 +129,7 @@ RSpec.describe Trifle::Stats::Configuration do
       it 'returns all default ranges' do
         configuration.track_ranges = []
         
-        expect(configuration.ranges).to eq([:minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 
@@ -137,7 +137,7 @@ RSpec.describe Trifle::Stats::Configuration do
       it 'returns all default ranges' do
         configuration.track_ranges = nil
         
-        expect(configuration.ranges).to eq([:minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 

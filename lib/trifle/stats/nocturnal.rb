@@ -60,13 +60,24 @@ module Trifle
           fractions.fetch(:day, @at.day),
           fractions.fetch(:hour, @at.hour),
           fractions.fetch(:minute, @at.min),
-          0, # second
+          fractions.fetch(:second, 0),
           config.tz.utc_offset
         )
       end
 
+      def second
+        change(second: @at.sec)
+      end
+
+      def next_second
+        Nocturnal.new(
+          second + 1,
+          config: config
+        ).second
+      end
+
       def minute
-        change
+        change(second: 0)
       end
 
       def next_minute

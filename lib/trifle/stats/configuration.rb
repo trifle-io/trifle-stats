@@ -9,7 +9,7 @@ module Trifle
       attr_accessor :track_ranges, :time_zone, :beginning_of_week, :designator
 
       def initialize
-        @ranges = %i[minute hour day week month quarter year]
+        @ranges = %i[second minute hour day week month quarter year]
         @beginning_of_week = :monday
         @time_zone = 'GMT'
         @designator = nil

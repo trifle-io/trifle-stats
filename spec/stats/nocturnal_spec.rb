@@ -117,6 +117,26 @@ RSpec.describe Trifle::Stats::Nocturnal do
     end
   end
 
+  describe '#second' do
+    let(:nocturnal) { described_class.new(test_time, config: mock_config) }
+
+    it 'returns time preserving exact second' do
+      result = nocturnal.second
+
+      expect(result).to eq(Time.new(2023, 3, 15, 14, 30, 45, 0))
+    end
+  end
+
+  describe '#next_second' do
+    let(:nocturnal) { described_class.new(test_time, config: mock_config) }
+
+    it 'returns next second boundary' do
+      result = nocturnal.next_second
+
+      expect(result).to eq(Time.new(2023, 3, 15, 14, 30, 46, 0))
+    end
+  end
+
   describe '#minute' do
     let(:nocturnal) { described_class.new(test_time, config: mock_config) }
 

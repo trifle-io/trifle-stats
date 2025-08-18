@@ -7,19 +7,18 @@ module Trifle
         include Trifle::Stats::Mixins::Packer
         Trifle::Stats::Series.register_transponder(:average, self)
 
-        def transpond(series:, path:, key: 'average', sum: 'sum', count: 'count') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-          keys = path.to_s.split('.')
-          sum = sum.to_s.split('.')
-          count = count.to_s.split('.')
-          key = path.to_s.empty? ? key : [path, key].join('.')
+        def transpond(series:, sum:, count:, response: 'average') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+          sum_keys = sum.to_s.split('.')
+          count_keys = count.to_s.split('.')
+
           series[:values] = series[:values].map do |data|
-            dsum = data.dig(*keys, *sum)
-            dcount = data.dig(*keys, *count)
+            dsum = data.dig(*sum_keys)
+            dcount = data.dig(*count_keys)
             next data unless dsum && dcount
 
             dres = (dsum / dcount)
             signal = {
-              key => dres.nan? ? BigDecimal(0) : dres
+              response => dres.nan? ? BigDecimal(0) : dres
             }
             self.class.deep_merge(data, self.class.unpack(hash: signal))
           end
