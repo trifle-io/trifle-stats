@@ -38,7 +38,7 @@ require 'trifle/stats'
 
 Trifle::Stats.configure do |config|
   config.driver = Trifle::Stats::Driver::Redis.new(Redis.new)
-  config.track_ranges = [:minute, :hour, :day, :week, :month, :quarter, :year]
+  config.track_granularities = [:minute, :hour, :day, :week, :month, :quarter, :year]
 end
 ```
 
@@ -51,7 +51,7 @@ Trifle::Stats.track(key: 'event::logs', at: Time.now, values: { count: 1, durati
 ### 3. Retrieve values
 
 ```ruby
-Trifle::Stats.values(key: 'event::logs', from: 1.month.ago, to: Time.now, range: :day)
+Trifle::Stats.values(key: 'event::logs', from: 1.month.ago, to: Time.now, granularity: :day)
 #=> {:at=>[Wed, 25 Jan 2023 00:00:00 +0000], :values=>[{"count"=>1, "duration"=>2.11}]}
 ```
 
@@ -68,7 +68,7 @@ Trifle::Stats supports multiple backends:
 
 ## Features
 
-- **Multiple time ranges** - Track data across different time periods
+- **Multiple time granularities** - Track data across different time periods
 - **Custom aggregators** - Sum, average, min, max with custom logic
 - **Series operations** - Advanced data manipulation and calculations
 - **Performance optimized** - Efficient storage and retrieval patterns

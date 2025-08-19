@@ -32,9 +32,9 @@ results = Performance::Drivers.new.configurations.map do |config|
 
   values = Benchmark.realtime do
     count.times do
-      Trifle::Stats.values(key: 'perf_assort', from: now, to: now, range: :hour, config: config)
-      Trifle::Stats.values(key: 'perf_assert', from: now, to: now, range: :hour, config: config)
-      Trifle::Stats.values(key: 'perf_track', from: now, to: now, range: :hour, config: config)
+      Trifle::Stats.values(key: 'perf_assort', from: now, to: now, granularity: :hour, config: config)
+      Trifle::Stats.values(key: 'perf_assert', from: now, to: now, granularity: :hour, config: config)
+      Trifle::Stats.values(key: 'perf_track', from: now, to: now, granularity: :hour, config: config)
     end
   end
 

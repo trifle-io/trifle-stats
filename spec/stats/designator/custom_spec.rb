@@ -42,7 +42,7 @@ RSpec.describe Trifle::Stats::Designator::Custom do
       end
     end
 
-    context 'when value is within buckets range' do
+    context 'when value is within buckets granularity' do
       it 'returns the first bucket that value.ceil is less than' do
         expect(designator.designate(value: 11)).to eq('50')   # ceil(11) = 11, first bucket > 11 is 50
         expect(designator.designate(value: 25)).to eq('50')   # ceil(25) = 25, first bucket > 25 is 50

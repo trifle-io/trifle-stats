@@ -44,11 +44,11 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
       mongo_client[test_collection].drop
     end
 
-    it 'creates collection with unique index on key, range, at' do
+    it 'creates collection with unique index on key, granularity, at' do
       described_class.setup!(mongo_client, collection_name: test_collection, joined_identifier: false)
 
       indexes = mongo_client[test_collection].indexes.to_a
-      compound_index = indexes.find { |idx| idx['key'] == { 'key' => 1, 'range' => 1, 'at' => -1 } }
+      compound_index = indexes.find { |idx| idx['key'] == { 'key' => 1, 'granularity' => 1, 'at' => -1 } }
 
       expect(compound_index).not_to be_nil
       expect(compound_index['unique']).to be true
@@ -58,8 +58,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#inc' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 5, duration: 100 } }
@@ -67,28 +67,28 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'increments values for each key' do
       driver.inc(keys: keys, **values)
 
-      result1 = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
-      result2 = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 2).first
+      result1 = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
+      result2 = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 2).first
 
       expect(result1['data']).to eq({'count' => 5, 'duration' => 100})
       expect(result2['data']).to eq({'count' => 5, 'duration' => 100})
     end
 
     it 'increments existing values' do
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 1, data: { count: 10 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 1, data: { count: 10 })
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 5)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 5)
 
-      result = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
+      result = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
       expect(result['data']['count']).to eq(15)
     end
 
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
-      result = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
+      result = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
       expect(result['data']).to eq({
         'stats' => { 'requests' => 10, 'errors' => 2 }
       })
@@ -98,8 +98,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#set' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 10, status: 'active' } }
@@ -107,28 +107,28 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'sets values for each key' do
       driver.set(keys: keys, **values)
 
-      result1 = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
-      result2 = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 2).first
+      result1 = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
+      result2 = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 2).first
 
       expect(result1['data']).to eq({'count' => 10, 'status' => 'active'})
       expect(result2['data']).to eq({'count' => 10, 'status' => 'active'})
     end
 
     it 'overwrites existing values' do
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 1, data: { count: 100 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 1, data: { count: 100 })
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 10)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 10)
 
-      result = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
+      result = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
       expect(result['data']['count']).to eq(10)
     end
 
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
-      result = mongo_client['test_stats_separated'].find(key: 'metric', range: 2023, at: 1).first
+      result = mongo_client['test_stats_separated'].find(key: 'metric', granularity: 2023, at: 1).first
       expect(result['data']).to eq({
         'config' => { 'enabled' => true, 'limit' => 50 }
       })
@@ -138,14 +138,14 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#get' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
 
     it 'retrieves values for each key' do
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 1, data: { count: 10, status: 'active' })
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 2, data: { count: 5 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 1, data: { count: 10, status: 'active' })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 2, data: { count: 5 })
 
       result = driver.get(keys: keys)
 
@@ -156,17 +156,17 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     end
 
     it 'handles empty results' do
-      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)])
+      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)])
 
       expect(result).to eq([{}])
     end
 
     it 'handles multiple keys with mixed data' do
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 1, data: { count: 10 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 1, data: { count: 10 })
       
       result = driver.get(keys: [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ])
 
       expect(result).to eq([
@@ -177,12 +177,12 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   end
 
   describe '#scan' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1) }
 
     it 'returns latest data for key' do
       # Insert multiple records with different timestamps
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 1, data: { count: 10 })
-      mongo_client['test_stats_separated'].insert_one(key: 'metric', range: 2023, at: 2, data: { count: 20 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 1, data: { count: 10 })
+      mongo_client['test_stats_separated'].insert_one(key: 'metric', granularity: 2023, at: 2, data: { count: 20 })
       
       result = driver.scan(key: Trifle::Stats::Nocturnal::Key.new(key: 'metric'))
 
@@ -197,7 +197,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   end
 
   describe '#ping' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1) }
     let(:values) { { status: 'active', count: 1 } }
 
     it 'stores ping data' do

@@ -23,7 +23,7 @@ module Trifle
           if joined_identifier
             collection.indexes.create_one({ key: 1 }, unique: true)
           else
-            collection.indexes.create_one({ key: 1, range: 1, at: -1 }, unique: true)
+            collection.indexes.create_one({ key: 1, granularity: 1, at: -1 }, unique: true)
           end
           collection.indexes.create_one({ expire_at: 1 }, expire_after_seconds: 0) if expire_after
         end
@@ -95,7 +95,7 @@ module Trifle
           map = data.inject({}) do |o, d|
             o.merge(
               Nocturnal::Key.new(
-                key: d['key'], range: d['range'], at: d['at']
+                key: d['key'], granularity: d['granularity'], at: d['at']
               ).identifier(separator) => d['data']
             )
           end

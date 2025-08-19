@@ -4,25 +4,25 @@ module Trifle
   module Stats
     class Nocturnal # rubocop:disable Metrics/ClassLength
       class Key
-        attr_reader :key, :range, :at
+        attr_reader :key, :granularity, :at
         attr_accessor :prefix
 
-        def initialize(key:, range: nil, at: nil)
+        def initialize(key:, granularity: nil, at: nil)
           @prefix = nil
           @key = key
-          @range = range
+          @granularity = granularity
           @at = at
         end
 
         def join(separator)
-          [prefix, key, range, at&.to_i].compact.join(separator)
+          [prefix, key, granularity, at&.to_i].compact.join(separator)
         end
 
         def identifier(separator)
           if separator
             { key: join(separator) }
           else
-            { key: key, range: range, at: at }.compact
+            { key: key, granularity: granularity, at: at }.compact
           end
         end
       end
@@ -32,14 +32,14 @@ module Trifle
         thursday: 4, friday: 5, saturday: 6
       }.freeze
 
-      def self.timeline(from:, to:, range:, config: nil)
+      def self.timeline(from:, to:, granularity:, config: nil)
         list = []
-        from = new(from, config: config).send(range)
-        to = new(to, config: config).send(range)
+        from = new(from, config: config).send(granularity)
+        to = new(to, config: config).send(granularity)
         item = from.dup
         while item <= to
           list << item
-          item = Nocturnal.new(item, config: config).send("next_#{range}")
+          item = Nocturnal.new(item, config: config).send("next_#{granularity}")
         end
         list
       end

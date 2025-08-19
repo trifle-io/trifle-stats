@@ -10,53 +10,53 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   let(:from_time) { Time.parse('2023-01-15 10:00:00 UTC') }
   let(:to_time) { Time.parse('2023-01-15 12:00:00 UTC') }
   let(:key) { 'test::metric' }
-  let(:range) { :hour }
+  let(:granularity) { :hour }
 
   describe '#initialize' do
     it 'sets required attributes' do
-      operation = described_class.new(key: key, from: from_time, to: to_time, range: range)
+      operation = described_class.new(key: key, from: from_time, to: to_time, granularity: granularity)
 
       expect(operation.key).to eq(key)
-      expect(operation.range).to eq(range)
+      expect(operation.granularity).to eq(granularity)
     end
 
     it 'accepts optional config' do
-      operation = described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config)
+      operation = described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config)
 
       expect(operation.config).to eq(mock_config)
     end
 
     it 'accepts optional skip_blanks parameter' do
-      operation = described_class.new(key: key, from: from_time, to: to_time, range: range, skip_blanks: true)
+      operation = described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, skip_blanks: true)
 
       expect(operation.instance_variable_get(:@skip_blanks)).to be true
     end
 
     it 'raises error when required parameters are missing' do
-      expect { described_class.new(from: from_time, to: to_time, range: range) }.to raise_error(KeyError)
-      expect { described_class.new(key: key, to: to_time, range: range) }.to raise_error(KeyError)
-      expect { described_class.new(key: key, from: from_time, range: range) }.to raise_error(KeyError)
+      expect { described_class.new(from: from_time, to: to_time, granularity: granularity) }.to raise_error(KeyError)
+      expect { described_class.new(key: key, to: to_time, granularity: granularity) }.to raise_error(KeyError)
+      expect { described_class.new(key: key, from: from_time, granularity: granularity) }.to raise_error(KeyError)
       expect { described_class.new(key: key, from: from_time, to: to_time) }.to raise_error(KeyError)
     end
   end
 
   describe '#config' do
     it 'returns provided config when given' do
-      operation = described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config)
+      operation = described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config)
 
       expect(operation.config).to eq(mock_config)
     end
 
     it 'returns default config when not provided' do
       allow(Trifle::Stats).to receive(:default).and_return(mock_config)
-      operation = described_class.new(key: key, from: from_time, to: to_time, range: range)
+      operation = described_class.new(key: key, from: from_time, to: to_time, granularity: granularity)
 
       expect(operation.config).to eq(mock_config)
     end
   end
 
   describe '#timeline' do
-    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config) }
+    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config) }
 
     it 'generates timeline using Nocturnal.timeline' do
       expected_timeline = [
@@ -68,7 +68,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
       expect(Trifle::Stats::Nocturnal).to receive(:timeline).with(
         from: from_time,
         to: to_time,
-        range: range
+        granularity: granularity
       ).and_return(expected_timeline)
 
       result = operation.timeline
@@ -87,7 +87,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   end
 
   describe '#data' do
-    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config) }
+    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config) }
     let(:timeline) { [Time.parse('2023-01-15 10:00:00 UTC'), Time.parse('2023-01-15 11:00:00 UTC')] }
 
     before do
@@ -104,12 +104,12 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].range).to eq(range)
+        expect(keys[0].granularity).to eq(granularity)
         expect(keys[0].at).to eq(Time.parse('2023-01-15 10:00:00 UTC'))
         
         expect(keys[1]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[1].key).to eq(key)
-        expect(keys[1].range).to eq(range)
+        expect(keys[1].granularity).to eq(granularity)
         expect(keys[1].at).to eq(Time.parse('2023-01-15 11:00:00 UTC'))
         
         expected_data
@@ -130,12 +130,12 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].range).to eq(range)
+        expect(keys[0].granularity).to eq(granularity)
         expect(keys[0].at).to eq(Time.parse('2023-01-15 10:00:00 UTC'))
         
         expect(keys[1]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[1].key).to eq(key)
-        expect(keys[1].range).to eq(range)
+        expect(keys[1].granularity).to eq(granularity)
         expect(keys[1].at).to eq(Time.parse('2023-01-15 11:00:00 UTC'))
         
         expected_data
@@ -147,7 +147,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   end
 
   describe '#values' do
-    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config) }
+    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config) }
     let(:timeline) { [Time.parse('2023-01-15 10:00:00 UTC'), Time.parse('2023-01-15 11:00:00 UTC')] }
     let(:data) { [{ 'count' => 10 }, { 'count' => 15 }] }
 
@@ -167,7 +167,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   end
 
   describe '#clean_values' do
-    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config) }
+    let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config) }
     let(:timeline) do
       [
         Time.parse('2023-01-15 10:00:00 UTC'),
@@ -225,7 +225,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
     let(:data) { [{ 'count' => 10 }, { 'count' => 15 }] }
 
     context 'when skip_blanks is false' do
-      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config, skip_blanks: false) }
+      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config, skip_blanks: false) }
 
       before do
         allow(operation).to receive(:timeline).and_return(timeline)
@@ -243,7 +243,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
     end
 
     context 'when skip_blanks is true' do
-      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config, skip_blanks: true) }
+      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config, skip_blanks: true) }
       let(:timeline_with_blanks) { [Time.parse('2023-01-15 10:00:00 UTC'), Time.parse('2023-01-15 11:00:00 UTC'), Time.parse('2023-01-15 12:00:00 UTC')] }
       let(:data_with_blanks) { [{ 'count' => 10 }, {}, { 'count' => 15 }] }
 
@@ -269,7 +269,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
     end
 
     context 'when skip_blanks is nil (default)' do
-      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, range: range, config: mock_config) }
+      let(:operation) { described_class.new(key: key, from: from_time, to: to_time, granularity: granularity, config: mock_config) }
 
       before do
         allow(operation).to receive(:timeline).and_return(timeline)

@@ -5,13 +5,13 @@ module Trifle
     module Operations
       module Timeseries
         class Values
-          attr_reader :key, :range
+          attr_reader :key, :granularity
 
           def initialize(**keywords)
             @key = keywords.fetch(:key)
             @from = keywords.fetch(:from)
             @to = keywords.fetch(:to)
-            @range = keywords.fetch(:range)
+            @granularity = keywords.fetch(:granularity)
             @config = keywords[:config]
             @skip_blanks = keywords[:skip_blanks]
           end
@@ -21,13 +21,13 @@ module Trifle
           end
 
           def timeline
-            @timeline ||= Nocturnal.timeline(from: @from, to: @to, range: range)
+            @timeline ||= Nocturnal.timeline(from: @from, to: @to, granularity: granularity)
           end
 
           def data
             @data ||= config.driver.get(
               keys: timeline.map do |at|
-                Nocturnal::Key.new(key: key, range: range, at: at)
+                Nocturnal::Key.new(key: key, granularity: granularity, at: at)
               end
             )
           end

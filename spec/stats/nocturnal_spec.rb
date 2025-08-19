@@ -23,8 +23,8 @@ RSpec.describe Trifle::Stats::Nocturnal do
     let(:from_time) { Time.parse('2023-03-15 10:00:00 UTC') }
     let(:to_time) { Time.parse('2023-03-15 12:00:00 UTC') }
 
-    it 'generates timeline for hour range' do
-      result = described_class.timeline(from: from_time, to: to_time, range: :hour, config: mock_config)
+    it 'generates timeline for hour granularity' do
+      result = described_class.timeline(from: from_time, to: to_time, granularity: :hour, config: mock_config)
 
       expect(result).to eq([
         Time.parse('2023-03-15 10:00:00 UTC'),
@@ -33,11 +33,11 @@ RSpec.describe Trifle::Stats::Nocturnal do
       ])
     end
 
-    it 'generates timeline for day range' do
+    it 'generates timeline for day granularity' do
       from_day = Time.parse('2023-03-15 00:00:00 UTC')
       to_day = Time.parse('2023-03-17 00:00:00 UTC')
 
-      result = described_class.timeline(from: from_day, to: to_day, range: :day, config: mock_config)
+      result = described_class.timeline(from: from_day, to: to_day, granularity: :day, config: mock_config)
 
       expect(result).to eq([
         Time.parse('2023-03-15 00:00:00 UTC'),
@@ -47,7 +47,7 @@ RSpec.describe Trifle::Stats::Nocturnal do
     end
 
     it 'handles single point timeline' do
-      result = described_class.timeline(from: from_time, to: from_time, range: :hour, config: mock_config)
+      result = described_class.timeline(from: from_time, to: from_time, granularity: :hour, config: mock_config)
 
       expect(result).to eq([Time.parse('2023-03-15 10:00:00 UTC')])
     end
@@ -55,7 +55,7 @@ RSpec.describe Trifle::Stats::Nocturnal do
     it 'uses default config when not provided' do
       allow(Trifle::Stats).to receive(:default).and_return(mock_config)
 
-      result = described_class.timeline(from: from_time, to: to_time, range: :hour)
+      result = described_class.timeline(from: from_time, to: to_time, granularity: :hour)
 
       expect(result).to be_an(Array)
       expect(result.length).to eq(3)

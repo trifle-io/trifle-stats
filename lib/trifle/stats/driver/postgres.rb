@@ -27,7 +27,7 @@ module Trifle
           if joined_identifier
             client.exec("CREATE TABLE #{table_name} (key VARCHAR(255) PRIMARY KEY, data JSONB NOT NULL DEFAULT '{}'::jsonb)") # rubocop:disable Layout/LineLength
           else
-            client.exec("CREATE TABLE #{table_name} (key VARCHAR(255) NOT NULL, range VARCHAR(255) NOT NULL, at TIMESTAMPTZ NOT NULL, data JSONB NOT NULL DEFAULT '{}'::jsonb, PRIMARY KEY (key, range, at))") # rubocop:disable Layout/LineLength
+            client.exec("CREATE TABLE #{table_name} (key VARCHAR(255) NOT NULL, granularity VARCHAR(255) NOT NULL, at TIMESTAMPTZ NOT NULL, data JSONB NOT NULL DEFAULT '{}'::jsonb, PRIMARY KEY (key, granularity, at))") # rubocop:disable Layout/LineLength
 
             # Create ping table for separated mode only
             client.exec("CREATE TABLE #{ping_table_name} (key VARCHAR(255) PRIMARY KEY, at TIMESTAMPTZ NOT NULL, data JSONB NOT NULL DEFAULT '{}'::jsonb)") # rubocop:disable Layout/LineLength
@@ -159,11 +159,11 @@ module Trifle
         end
 
         def build_map_key(data)
-          @joined_identifier ? data[:key] : "#{data[:key]}::#{data[:range]}::#{data[:at]}"
+          @joined_identifier ? data[:key] : "#{data[:key]}::#{data[:granularity]}::#{data[:at]}"
         end
 
         def build_identifier_key(identifier)
-          @joined_identifier ? identifier[:key] : "#{identifier[:key]}::#{identifier[:range]}::#{identifier[:at].utc.strftime('%Y-%m-%d %H:%M:%S+00')}" # rubocop:disable Layout/LineLength
+          @joined_identifier ? identifier[:key] : "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].utc.strftime('%Y-%m-%d %H:%M:%S+00')}" # rubocop:disable Layout/LineLength
         end
       end
     end

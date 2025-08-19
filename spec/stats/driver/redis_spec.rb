@@ -33,8 +33,8 @@ RSpec.describe Trifle::Stats::Driver::Redis do
   describe '#inc' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 5, duration: 100 } }
@@ -52,7 +52,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
     it 'increments existing values' do
       redis_client.hset('test::metric::2023::1', 'count', '10')
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 5)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 5)
 
       result = redis_client.hgetall('test::metric::2023::1')
       expect(result['count']).to eq('15')
@@ -61,7 +61,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
       result = redis_client.hgetall('test::metric::2023::1')
       expect(result).to eq({
@@ -74,8 +74,8 @@ RSpec.describe Trifle::Stats::Driver::Redis do
   describe '#set' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 10, status: 'active' } }
@@ -93,7 +93,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
     it 'overwrites existing values' do
       redis_client.hset('test::metric::2023::1', 'count', '100')
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 10)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 10)
 
       result = redis_client.hgetall('test::metric::2023::1')
       expect(result['count']).to eq('10')
@@ -102,7 +102,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
       result = redis_client.hgetall('test::metric::2023::1')
       expect(result).to eq({
@@ -115,8 +115,8 @@ RSpec.describe Trifle::Stats::Driver::Redis do
   describe '#get' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
 
@@ -139,7 +139,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
         'simple', '42'
       )
 
-      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)])
+      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)])
 
       expect(result).to eq([{
         'stats' => {'requests' => '100', 'errors' => '5'},
@@ -148,7 +148,7 @@ RSpec.describe Trifle::Stats::Driver::Redis do
     end
 
     it 'handles empty results' do
-      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)])
+      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)])
 
       expect(result).to eq([{}])
     end
@@ -157,8 +157,8 @@ RSpec.describe Trifle::Stats::Driver::Redis do
       redis_client.hset('test::metric::2023::1', 'count', '10')
       
       result = driver.get(keys: [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ])
 
       expect(result).to eq([

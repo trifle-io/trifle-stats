@@ -58,8 +58,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#inc' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 5, duration: 100 } }
@@ -77,7 +77,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'increments existing values' do
       mongo_client['test_stats'].insert_one(key: 'metric::2023::1', data: { count: 10 })
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 5)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 5)
 
       result = mongo_client['test_stats'].find(key: 'metric::2023::1').first
       expect(result['data']['count']).to eq(15)
@@ -86,7 +86,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.inc(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
       result = mongo_client['test_stats'].find(key: 'metric::2023::1').first
       expect(result['data']).to eq({
@@ -98,8 +98,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#set' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
     let(:values) { { count: 10, status: 'active' } }
@@ -117,7 +117,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'overwrites existing values' do
       mongo_client['test_stats'].insert_one(key: 'metric::2023::1', data: { count: 100 })
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], count: 10)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], count: 10)
 
       result = mongo_client['test_stats'].find(key: 'metric::2023::1').first
       expect(result['data']['count']).to eq(10)
@@ -126,7 +126,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)], **nested_values)
+      driver.set(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)], **nested_values)
 
       result = mongo_client['test_stats'].find(key: 'metric::2023::1').first
       expect(result['data']).to eq({
@@ -138,8 +138,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
   describe '#get' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ]
     end
 
@@ -156,7 +156,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     end
 
     it 'handles empty results' do
-      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1)])
+      result = driver.get(keys: [Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1)])
 
       expect(result).to eq([{}])
     end
@@ -165,8 +165,8 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
       mongo_client['test_stats'].insert_one(key: 'metric::2023::1', data: { count: 10 })
       
       result = driver.get(keys: [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 1),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: 2023, at: 2)
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 1),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: 2023, at: 2)
       ])
 
       expect(result).to eq([

@@ -3,7 +3,7 @@ RSpec.describe Trifle::Stats::Configuration do
 
   describe '#initialize' do
     it 'sets default values' do
-      expect(configuration.instance_variable_get(:@ranges)).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+      expect(configuration.instance_variable_get(:@granularities)).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       expect(configuration.beginning_of_week).to eq(:monday)
       expect(configuration.time_zone).to eq('GMT')
       expect(configuration.designator).to be_nil
@@ -38,11 +38,11 @@ RSpec.describe Trifle::Stats::Configuration do
     end
   end
 
-  describe '#track_ranges=' do
-    it 'sets track_ranges' do
-      configuration.track_ranges = [:hour, :day]
+  describe '#track_granularities=' do
+    it 'sets track_granularities' do
+      configuration.track_granularities = [:hour, :day]
       
-      expect(configuration.track_ranges).to eq([:hour, :day])
+      expect(configuration.track_granularities).to eq([:hour, :day])
     end
   end
 
@@ -118,58 +118,58 @@ RSpec.describe Trifle::Stats::Configuration do
     end
   end
 
-  describe '#ranges' do
-    context 'when track_ranges is not set' do
-      it 'returns all default ranges' do
-        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+  describe '#granularities' do
+    context 'when track_granularities is not set' do
+      it 'returns all default granularities' do
+        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 
-    context 'when track_ranges is empty array' do
-      it 'returns all default ranges' do
-        configuration.track_ranges = []
+    context 'when track_granularities is empty array' do
+      it 'returns all default granularities' do
+        configuration.track_granularities = []
         
-        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 
-    context 'when track_ranges is nil' do
-      it 'returns all default ranges' do
-        configuration.track_ranges = nil
+    context 'when track_granularities is nil' do
+      it 'returns all default granularities' do
+        configuration.track_granularities = nil
         
-        expect(configuration.ranges).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
       end
     end
 
-    context 'when track_ranges is set' do
-      it 'returns intersection of default ranges and track_ranges' do
-        configuration.track_ranges = [:hour, :day, :month, :invalid_range]
+    context 'when track_granularities is set' do
+      it 'returns intersection of default granularities and track_granularities' do
+        configuration.track_granularities = [:hour, :day, :month, :invalid_granularity]
         
-        expect(configuration.ranges).to eq([:hour, :day, :month])
+        expect(configuration.granularities).to eq([:hour, :day, :month])
       end
     end
 
-    context 'when track_ranges contains only valid ranges' do
-      it 'returns only specified ranges in original order' do
-        configuration.track_ranges = [:day, :hour, :year]
+    context 'when track_granularities contains only valid granularities' do
+      it 'returns only specified granularities in original order' do
+        configuration.track_granularities = [:day, :hour, :year]
         
-        expect(configuration.ranges).to eq([:hour, :day, :year])
+        expect(configuration.granularities).to eq([:hour, :day, :year])
       end
     end
 
-    context 'when track_ranges contains no valid ranges' do
+    context 'when track_granularities contains no valid granularities' do
       it 'returns empty array' do
-        configuration.track_ranges = [:invalid1, :invalid2]
+        configuration.track_granularities = [:invalid1, :invalid2]
         
-        expect(configuration.ranges).to eq([])
+        expect(configuration.granularities).to eq([])
       end
     end
 
-    context 'when track_ranges contains duplicates' do
-      it 'returns unique ranges' do
-        configuration.track_ranges = [:hour, :day, :hour, :day]
+    context 'when track_granularities contains duplicates' do
+      it 'returns unique granularities' do
+        configuration.track_granularities = [:hour, :day, :hour, :day]
         
-        expect(configuration.ranges).to eq([:hour, :day])
+        expect(configuration.granularities).to eq([:hour, :day])
       end
     end
   end

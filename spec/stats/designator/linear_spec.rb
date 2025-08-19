@@ -38,7 +38,7 @@ RSpec.describe Trifle::Stats::Designator::Linear do
       end
     end
 
-    context 'when value is within range' do
+    context 'when value is within granularity' do
       it 'returns correct bucket for exact step values' do
         expect(designator.designate(value: 11)).to eq('20')
         expect(designator.designate(value: 20)).to eq('20')

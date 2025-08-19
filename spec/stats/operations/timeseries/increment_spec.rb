@@ -6,7 +6,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
   let(:mock_config) do
     instance_double(Trifle::Stats::Configuration).tap do |config|
       allow(config).to receive(:driver).and_return(mock_driver)
-      allow(config).to receive(:ranges).and_return([:hour, :day])
+      allow(config).to receive(:granularities).and_return([:hour, :day])
       allow(config).to receive(:time_zone).and_return('UTC')
       allow(config).to receive(:beginning_of_week).and_return(:monday)
       allow(config).to receive(:tz).and_return(mock_tz)
@@ -55,21 +55,21 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
   describe '#key_for' do
     let(:operation) { described_class.new(key: key, at: at_time, values: values, config: mock_config) }
 
-    it 'returns formatted key for given range' do
-      result = operation.key_for(range: :hour)
+    it 'returns formatted key for given granularity' do
+      result = operation.key_for(granularity: :hour)
 
       expect(result).to be_a(Trifle::Stats::Nocturnal::Key)
       expect(result.key).to eq(key)
-      expect(result.range).to eq(:hour)
+      expect(result.granularity).to eq(:hour)
       expect(result.at).to eq(Time.parse('2023-01-15 14:00:00 UTC'))
     end
 
-    it 'returns formatted key for day range' do
-      result = operation.key_for(range: :day)
+    it 'returns formatted key for day granularity' do
+      result = operation.key_for(granularity: :day)
 
       expect(result).to be_a(Trifle::Stats::Nocturnal::Key)
       expect(result.key).to eq(key)
-      expect(result.range).to eq(:day)
+      expect(result.granularity).to eq(:day)
       expect(result.at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
     end
   end
@@ -85,12 +85,12 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].range).to eq(:hour)
+        expect(keys[0].granularity).to eq(:hour)
         expect(keys[0].at).to eq(Time.parse('2023-01-15 14:00:00 UTC'))
         
         expect(keys[1]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[1].key).to eq(key)
-        expect(keys[1].range).to eq(:day)
+        expect(keys[1].granularity).to eq(:day)
         expect(keys[1].at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
         
         expect(args[:count]).to eq(5)
@@ -114,8 +114,8 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
       operation.perform
     end
 
-    it 'works with single range configuration' do
-      allow(mock_config).to receive(:ranges).and_return([:day])
+    it 'works with single granularity configuration' do
+      allow(mock_config).to receive(:granularities).and_return([:day])
       operation = described_class.new(key: key, at: at_time, values: values, config: mock_config)
 
       expect(mock_driver).to receive(:inc) do |args|
@@ -125,7 +125,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].range).to eq(:day)
+        expect(keys[0].granularity).to eq(:day)
         expect(keys[0].at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
         
         expect(args[:count]).to eq(5)
@@ -135,8 +135,8 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
       operation.perform
     end
 
-    it 'works with multiple ranges' do
-      allow(mock_config).to receive(:ranges).and_return([:minute, :hour, :day, :month])
+    it 'works with multiple granularities' do
+      allow(mock_config).to receive(:granularities).and_return([:minute, :hour, :day, :month])
       operation = described_class.new(key: key, at: at_time, values: values, config: mock_config)
 
       expect(mock_driver).to receive(:inc) do |args|
@@ -146,22 +146,22 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].range).to eq(:minute)
+        expect(keys[0].granularity).to eq(:minute)
         expect(keys[0].at).to eq(Time.parse('2023-01-15 14:30:00 UTC'))
         
         expect(keys[1]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[1].key).to eq(key)
-        expect(keys[1].range).to eq(:hour)
+        expect(keys[1].granularity).to eq(:hour)
         expect(keys[1].at).to eq(Time.parse('2023-01-15 14:00:00 UTC'))
         
         expect(keys[2]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[2].key).to eq(key)
-        expect(keys[2].range).to eq(:day)
+        expect(keys[2].granularity).to eq(:day)
         expect(keys[2].at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
         
         expect(keys[3]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[3].key).to eq(key)
-        expect(keys[3].range).to eq(:month)
+        expect(keys[3].granularity).to eq(:month)
         expect(keys[3].at).to eq(Time.parse('2023-01-01 00:00:00 UTC'))
         
         expect(args[:count]).to eq(5)

@@ -77,7 +77,7 @@ RSpec.describe Trifle::Stats::Designator::Geometric do
       end
     end
 
-    context 'with different min/max ranges' do
+    context 'with different min/max granularities' do
       it 'works with min=0' do
         designator = described_class.new(min: 0, max: 100)
         
@@ -133,7 +133,7 @@ RSpec.describe Trifle::Stats::Designator::Geometric do
     context 'same min and max' do
       let(:designator) { described_class.new(min: 50, max: 50) }
 
-      it 'handles values below range' do
+      it 'handles values below granularity' do
         expect(designator.designate(value: 25)).to eq('50.0')
       end
 
@@ -141,7 +141,7 @@ RSpec.describe Trifle::Stats::Designator::Geometric do
         expect(designator.designate(value: 50)).to eq('50.0')
       end
 
-      it 'handles values above range' do
+      it 'handles values above granularity' do
         expect(designator.designate(value: 75)).to eq('50.0+')
       end
     end

@@ -58,7 +58,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
 
       expect(columns).to eq([
         ['key', 'character varying'],
-        ['range', 'character varying'],
+        ['granularity', 'character varying'],
         ['at', 'timestamp with time zone'],
         ['data', 'jsonb']
       ])
@@ -68,8 +68,8 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   describe '#inc' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
     let(:values) { { count: 5, duration: 100 } }
@@ -80,32 +80,32 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       # Get actual keys from database
       key1_at = keys[0].at.iso8601
       key2_at = keys[1].at.iso8601
-      result1 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key1_at}'").first
-      result2 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key2_at}'").first
+      result1 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
+      result2 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
       expect(JSON.parse(result1['data'])).to eq({'count' => 5, 'duration' => 100})
       expect(JSON.parse(result2['data'])).to eq({'count' => 5, 'duration' => 100})
     end
 
     it 'increments existing values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.iso8601
-      pg_client.exec("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', '{\"count\": 10}')")
+      pg_client.exec("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', '{\"count\": 10}')")
       
       driver.inc(keys: [key], count: 5)
 
-      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result['data'])['count']).to eq(15)
     end
 
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.iso8601
       driver.inc(keys: [key], **nested_values)
 
-      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result['data'])).to eq({
         'stats.requests' => 10,
         'stats.errors' => 2
@@ -116,8 +116,8 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   describe '#set' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
     let(:values) { { count: 10, status: 'active' } }
@@ -127,32 +127,32 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
 
       key1_at = keys[0].at.iso8601
       key2_at = keys[1].at.iso8601
-      result1 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key1_at}'").first
-      result2 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key2_at}'").first
+      result1 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
+      result2 = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
       expect(JSON.parse(result1['data'])).to eq({'count' => 10, 'status' => 'active'})
       expect(JSON.parse(result2['data'])).to eq({'count' => 10, 'status' => 'active'})
     end
 
     it 'overwrites existing values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.iso8601
-      pg_client.exec("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', '{\"count\": 100}')")
+      pg_client.exec("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', '{\"count\": 100}')")
       
       driver.set(keys: [key], count: 10)
 
-      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result['data'])['count']).to eq(10)
     end
 
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.iso8601
       driver.set(keys: [key], **nested_values)
 
-      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = pg_client.exec("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result['data'])).to eq({
         'config.enabled' => true,
         'config.limit' => 50
@@ -163,8 +163,8 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   describe '#get' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
 
@@ -181,7 +181,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     end
 
     it 'unpacks nested values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       nested_values = { stats: { requests: 100, errors: 5 }, simple: 42 }
       driver.inc(keys: [key], **nested_values)
 
@@ -194,7 +194,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     end
 
     it 'handles empty results' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       result = driver.get(keys: [key])
 
       expect(result).to eq([{}])
@@ -202,8 +202,8 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
 
     it 'handles multiple keys with mixed data' do
       keys = [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
       driver.inc(keys: [keys[0]], count: 10)
       
@@ -216,9 +216,9 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     end
 
     it 'handles empty JSON objects' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.iso8601
-      pg_client.exec("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', '{}')")
+      pg_client.exec("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', '{}')")
 
       result = driver.get(keys: [key])
 
@@ -227,11 +227,11 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   end
 
   describe '#scan' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')) }
 
     it 'returns latest data for key' do
-      key1 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
-      key2 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-02'))
+      key1 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
+      key2 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-02'))
       driver.ping(key: key1, count: 10)
       driver.ping(key: key2, count: 20)
       
@@ -250,7 +250,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
   end
 
   describe '#ping' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')) }
     let(:values) { { status: 'active', count: 1 } }
 
     it 'stores ping data' do

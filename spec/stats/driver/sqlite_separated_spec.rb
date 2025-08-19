@@ -50,7 +50,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
       expect(columns).to eq([
         ['key', 'varchar(255)'],
-        ['range', 'varchar(255)'],
+        ['granularity', 'varchar(255)'],
         ['at', 'datetime'],
         ['data', 'json']
       ])
@@ -69,8 +69,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
   describe '#inc' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
     let(:values) { { count: 5, duration: 100 } }
@@ -80,32 +80,32 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
       key1_at = keys[0].at.strftime('%Y-%m-%d %H:%M:%S')
       key2_at = keys[1].at.strftime('%Y-%m-%d %H:%M:%S')
-      result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key1_at}'").first
-      result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key2_at}'").first
+      result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
+      result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
       expect(JSON.parse(result1[0])).to eq({'count' => 5, 'duration' => 100})
       expect(JSON.parse(result2[0])).to eq({'count' => 5, 'duration' => 100})
     end
 
     it 'increments existing values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
-      sqlite_client.execute("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 10}'))")
+      sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 10}'))")
       
       driver.inc(keys: [key], count: 5)
 
-      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result[0])['count']).to eq(15)
     end
 
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
       driver.inc(keys: [key], **nested_values)
 
-      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result[0])).to eq({
         'stats.requests' => 10,
         'stats.errors' => 2
@@ -116,8 +116,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
   describe '#set' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
     let(:values) { { count: 10, status: 'active' } }
@@ -127,32 +127,32 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
       key1_at = keys[0].at.strftime('%Y-%m-%d %H:%M:%S')
       key2_at = keys[1].at.strftime('%Y-%m-%d %H:%M:%S')
-      result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key1_at}'").first
-      result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key2_at}'").first
+      result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
+      result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
       expect(JSON.parse(result1[0])).to eq({'count' => 10, 'status' => 'active'})
       expect(JSON.parse(result2[0])).to eq({'count' => 10, 'status' => 'active'})
     end
 
     it 'overwrites existing values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
-      sqlite_client.execute("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 100}'))")
+      sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 100}'))")
       
       driver.set(keys: [key], count: 10)
 
-      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result[0])['count']).to eq(10)
     end
 
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
       driver.set(keys: [key], **nested_values)
 
-      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND range = '2023' AND at = '#{key_at}'").first
+      result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
       expect(JSON.parse(result[0])).to eq({
         'config.enabled' => true,
         'config.limit' => 50
@@ -163,8 +163,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
   describe '#get' do
     let(:keys) do
       [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
     end
 
@@ -181,7 +181,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'unpacks nested values' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       nested_values = { stats: { requests: 100, errors: 5 }, simple: 42 }
       driver.inc(keys: [key], **nested_values)
 
@@ -194,7 +194,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'handles empty results' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       result = driver.get(keys: [key])
 
       expect(result).to eq([{}])
@@ -202,8 +202,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
     it 'handles multiple keys with mixed data' do
       keys = [
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')),
-        Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-02-01'))
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')),
+        Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-02-01'))
       ]
       driver.inc(keys: [keys[0]], count: 10)
       
@@ -216,9 +216,9 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'handles invalid JSON gracefully' do
-      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
-      sqlite_client.execute("INSERT INTO test_stats_separated (key, range, at, data) VALUES ('metric', '2023', '#{key_at}', 'invalid_json')")
+      sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', 'invalid_json')")
 
       result = driver.get(keys: [key])
 
@@ -227,11 +227,11 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
   end
 
   describe '#scan' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')) }
 
     it 'returns latest data for key' do
-      key1 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01'))
-      key2 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-02'))
+      key1 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
+      key2 = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-02'))
       driver.ping(key: key1, count: 10)
       driver.ping(key: key2, count: 20)
       
@@ -250,7 +250,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
   end
 
   describe '#ping' do
-    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', range: '2023', at: Time.parse('2023-01-01')) }
+    let(:key) { Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01')) }
     let(:values) { { status: 'active', count: 1 } }
 
     it 'stores ping data' do

@@ -29,7 +29,7 @@ module Trifle
             client.execute("CREATE TABLE #{table_name} (key varchar(255), data json);")
             client.execute("CREATE UNIQUE INDEX idx_#{table_name}_key ON #{table_name} (key);")
           else
-            client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, range varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, range, at));") # rubocop:disable Layout/LineLength
+            client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, granularity varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, granularity, at));") # rubocop:disable Layout/LineLength
 
             # Create ping table for separated mode only
             client.execute("CREATE TABLE #{ping_table_name} (key varchar(255) PRIMARY KEY, at datetime NOT NULL, data json);") # rubocop:disable Layout/LineLength
@@ -162,11 +162,11 @@ module Trifle
         end
 
         def build_map_key(data)
-          @joined_identifier ? data[:key] : "#{data[:key]}::#{data[:range]}::#{data[:at]}"
+          @joined_identifier ? data[:key] : "#{data[:key]}::#{data[:granularity]}::#{data[:at]}"
         end
 
         def build_identifier_key(identifier)
-          @joined_identifier ? identifier[:key] : "#{identifier[:key]}::#{identifier[:range]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" # rubocop:disable Layout/LineLength
+          @joined_identifier ? identifier[:key] : "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" # rubocop:disable Layout/LineLength
         end
       end
     end

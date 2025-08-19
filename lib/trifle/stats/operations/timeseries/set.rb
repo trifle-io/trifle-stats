@@ -18,14 +18,14 @@ module Trifle
             @config || Trifle::Stats.default
           end
 
-          def key_for(range:)
-            at = Nocturnal.new(@at, config: config).send(range)
-            Nocturnal::Key.new(key: key, range: range, at: at)
+          def key_for(granularity:)
+            at = Nocturnal.new(@at, config: config).send(granularity)
+            Nocturnal::Key.new(key: key, granularity: granularity, at: at)
           end
 
           def perform
             config.driver.set(
-              keys: config.ranges.map { |range| key_for(range: range) },
+              keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
               **values
             )
           end

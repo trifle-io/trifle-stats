@@ -6,10 +6,10 @@ module Trifle
   module Stats
     class Configuration
       attr_writer :driver
-      attr_accessor :track_ranges, :time_zone, :beginning_of_week, :designator
+      attr_accessor :track_granularities, :time_zone, :beginning_of_week, :designator
 
       def initialize
-        @ranges = %i[second minute hour day week month quarter year]
+        @granularities = %i[second minute hour day week month quarter year]
         @beginning_of_week = :monday
         @time_zone = 'GMT'
         @designator = nil
@@ -23,10 +23,10 @@ module Trifle
         TZInfo::Timezone.get('GMT')
       end
 
-      def ranges
-        return @ranges if blank?(track_ranges)
+      def granularities
+        return @granularities if blank?(track_granularities)
 
-        @ranges & track_ranges
+        @granularities & track_granularities
       end
 
       def driver
