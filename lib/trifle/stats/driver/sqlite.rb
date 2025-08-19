@@ -45,7 +45,8 @@ module Trifle
           client.transaction do |c|
             keys.each do |key|
               identifier = key.identifier(separator)
-              c.execute(inc_query(identifier: identifier, data: data))
+              # Batch data operations to avoid SQLite parser stack overflow
+              batch_data_operations(identifier: identifier, data: data, connection: c, operation: :inc)
             end
           end
         end
@@ -67,7 +68,8 @@ module Trifle
           client.transaction do |c|
             keys.each do |key|
               identifier = key.identifier(separator)
-              c.execute(set_query(identifier: identifier, data: data))
+              # Batch data operations to avoid SQLite parser stack overflow
+              batch_data_operations(identifier: identifier, data: data, connection: c, operation: :set)
             end
           end
         end
@@ -147,6 +149,18 @@ module Trifle
         end
 
         private
+
+        # Batch data operations to avoid SQLite parser stack overflow
+        # Splits large data hashes into smaller chunks to prevent too many nested json_set calls
+        def batch_data_operations(identifier:, data:, connection:, operation:)
+          # SQLite can handle about 10-15 nested json_set calls safely
+          batch_size = 10
+          data.each_slice(batch_size) do |batch|
+            batch_data = batch.to_h
+            query = send("#{operation}_query", identifier: identifier, data: batch_data)
+            connection.execute(query)
+          end
+        end
 
         def format_value(value)
           case value
