@@ -7,7 +7,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Classify do
   let(:mock_config) do
     instance_double(Trifle::Stats::Configuration).tap do |config|
       allow(config).to receive(:driver).and_return(mock_driver)
-      allow(config).to receive(:granularities).and_return([:hour, :day])
+      allow(config).to receive(:granularities).and_return(['1h', '1d'])
       allow(config).to receive(:time_zone).and_return('UTC')
       allow(config).to receive(:beginning_of_week).and_return(:monday)
       allow(config).to receive(:tz).and_return(mock_tz)
@@ -155,20 +155,20 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Classify do
     let(:operation) { described_class.new(key: key, at: at_time, values: values, config: mock_config) }
 
     it 'returns formatted key for given granularity' do
-      result = operation.key_for(granularity: :hour)
+      result = operation.key_for(granularity: '1h')
 
       expect(result).to be_a(Trifle::Stats::Nocturnal::Key)
       expect(result.key).to eq(key)
-      expect(result.granularity).to eq(:hour)
+      expect(result.granularity).to eq('1h')
       expect(result.at).to eq(Time.parse('2023-01-15 14:00:00 UTC'))
     end
 
     it 'returns formatted key for day granularity' do
-      result = operation.key_for(granularity: :day)
+      result = operation.key_for(granularity: '1d')
 
       expect(result).to be_a(Trifle::Stats::Nocturnal::Key)
       expect(result.key).to eq(key)
-      expect(result.granularity).to eq(:day)
+      expect(result.granularity).to eq('1d')
       expect(result.at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
     end
   end
@@ -187,16 +187,16 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Classify do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].granularity).to eq(:hour)
+        expect(keys[0].granularity).to eq('1h')
         expect(keys[0].at).to eq(Time.parse('2023-01-15 14:00:00 UTC'))
         
         expect(keys[1]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[1].key).to eq(key)
-        expect(keys[1].granularity).to eq(:day)
+        expect(keys[1].granularity).to eq('1d')
         expect(keys[1].at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
         
-        expect(args[:response_time]).to eq({ 'medium' => 1 })
-        expect(args[:request_size]).to eq({ 'large' => 1 })
+        expect(args[:values][:response_time]).to eq({ 'medium' => 1 })
+        expect(args[:values][:request_size]).to eq({ 'large' => 1 })
       end
 
       operation.perform
@@ -230,14 +230,14 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Classify do
           }
         }
         
-        expect(args[:performance]).to eq(expected_values[:performance])
+        expect(args[:values][:performance]).to eq(expected_values[:performance])
       end
 
       operation.perform
     end
 
     it 'works with single granularity configuration' do
-      allow(mock_config).to receive(:granularities).and_return([:day])
+      allow(mock_config).to receive(:granularities).and_return(['1d'])
       allow(mock_designator).to receive(:designate).with(value: 150).and_return('medium')
       allow(mock_designator).to receive(:designate).with(value: 1024).and_return('large')
 
@@ -250,11 +250,11 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Classify do
         
         expect(keys[0]).to be_a(Trifle::Stats::Nocturnal::Key)
         expect(keys[0].key).to eq(key)
-        expect(keys[0].granularity).to eq(:day)
+        expect(keys[0].granularity).to eq('1d')
         expect(keys[0].at).to eq(Time.parse('2023-01-15 00:00:00 UTC'))
         
-        expect(args[:response_time]).to eq({ 'medium' => 1 })
-        expect(args[:request_size]).to eq({ 'large' => 1 })
+        expect(args[:values][:response_time]).to eq({ 'medium' => 1 })
+        expect(args[:values][:request_size]).to eq({ 'large' => 1 })
       end
 
       operation.perform

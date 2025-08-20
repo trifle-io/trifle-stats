@@ -21,7 +21,10 @@ module Trifle
           end
 
           def timeline
-            @timeline ||= Nocturnal.timeline(from: @from, to: @to, granularity: granularity)
+            @timeline ||= begin
+              pgrn = Nocturnal::Parser.new(granularity)
+              Nocturnal.timeline(from: @from, to: @to, offset: pgrn.offset, unit: pgrn.unit)
+            end
           end
 
           def data

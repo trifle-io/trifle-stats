@@ -38,7 +38,7 @@ require 'trifle/stats'
 
 Trifle::Stats.configure do |config|
   config.driver = Trifle::Stats::Driver::Redis.new(Redis.new)
-  config.track_granularities = [:minute, :hour, :day, :week, :month, :quarter, :year]
+  config.granularities = ['1m', '1h', '1d', '1w', '1mo', '1q', '1y']
 end
 ```
 

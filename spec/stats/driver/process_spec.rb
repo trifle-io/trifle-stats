@@ -19,7 +19,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     let(:values) { { count: 5, duration: 100 } }
 
     it 'increments values for each key' do
-      driver.inc(keys: keys, **values)
+      driver.inc(keys: keys, values: values)
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({'count' => 5, 'duration' => 100})
@@ -29,7 +29,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     it 'increments existing values' do
       driver.instance_variable_get(:@data)['metric::2023::01'] = {'count' => 10}
       
-      driver.inc(keys: [['metric', '2023', '01']], count: 5)
+      driver.inc(keys: [['metric', '2023', '01']], values: { count: 5 })
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']['count']).to eq(15)
@@ -38,7 +38,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     it 'handles nested values using packer' do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
-      driver.inc(keys: [['metric', '2023', '01']], **nested_values)
+      driver.inc(keys: [['metric', '2023', '01']], values: nested_values)
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({
@@ -48,7 +48,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     end
 
     it 'handles zero values correctly' do
-      driver.inc(keys: [['metric', '2023', '01']], count: 0)
+      driver.inc(keys: [['metric', '2023', '01']], values: { count: 0 })
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({'count' => 0})
@@ -60,7 +60,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     let(:values) { { count: 10, status: 'active' } }
 
     it 'sets values for each key' do
-      driver.set(keys: keys, **values)
+      driver.set(keys: keys, values: values)
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({'count' => 10, 'status' => 'active'})
@@ -70,7 +70,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     it 'overwrites existing values' do
       driver.instance_variable_get(:@data)['metric::2023::01'] = {'count' => 100}
       
-      driver.set(keys: [['metric', '2023', '01']], count: 10)
+      driver.set(keys: [['metric', '2023', '01']], values: { count: 10 })
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']['count']).to eq(10)
@@ -79,7 +79,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     it 'handles nested values using packer' do
       nested_values = { config: { enabled: true, limit: 50 } }
       
-      driver.set(keys: [['metric', '2023', '01']], **nested_values)
+      driver.set(keys: [['metric', '2023', '01']], values: nested_values)
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({
@@ -91,7 +91,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
     it 'preserves non-overwritten keys' do
       driver.instance_variable_get(:@data)['metric::2023::01'] = {'count' => 100, 'other' => 'value'}
       
-      driver.set(keys: [['metric', '2023', '01']], count: 10)
+      driver.set(keys: [['metric', '2023', '01']], values: { count: 10 })
 
       data = driver.instance_variable_get(:@data)
       expect(data['metric::2023::01']).to eq({'count' => 10, 'other' => 'value'})
@@ -150,7 +150,7 @@ RSpec.describe Trifle::Stats::Driver::Process do
 
     it 'handles keys with special characters' do
       special_keys = [['metric with spaces', '2023-01', 'user@example.com']]
-      driver.set(keys: special_keys, count: 42)
+      driver.set(keys: special_keys, values: { count: 42 })
 
       result = driver.get(keys: special_keys)
 

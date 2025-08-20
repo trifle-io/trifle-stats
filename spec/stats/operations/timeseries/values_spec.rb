@@ -10,7 +10,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   let(:from_time) { Time.parse('2023-01-15 10:00:00 UTC') }
   let(:to_time) { Time.parse('2023-01-15 12:00:00 UTC') }
   let(:key) { 'test::metric' }
-  let(:granularity) { :hour }
+  let(:granularity) { '1h' }
 
   describe '#initialize' do
     it 'sets required attributes' do
@@ -68,7 +68,8 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
       expect(Trifle::Stats::Nocturnal).to receive(:timeline).with(
         from: from_time,
         to: to_time,
-        granularity: granularity
+        offset: 1,
+        unit: :hour
       ).and_return(expected_timeline)
 
       result = operation.timeline

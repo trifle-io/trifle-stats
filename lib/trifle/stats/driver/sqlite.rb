@@ -40,7 +40,7 @@ module Trifle
           "#{self.class.name}(#{@joined_identifier ? 'J' : 'S'})"
         end
 
-        def inc(keys:, **values)
+        def inc(keys:, values:)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
@@ -63,7 +63,7 @@ module Trifle
           SQL
         end
 
-        def set(keys:, **values)
+        def set(keys:, values:)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
@@ -115,7 +115,7 @@ module Trifle
           SQL
         end
 
-        def ping(key:, **values)
+        def ping(key:, values:)
           return [] if @joined_identifier
 
           data = self.class.pack(hash: { data: values, at: key.at })

@@ -5,11 +5,11 @@ require 'tzinfo'
 module Trifle
   module Stats
     class Configuration
-      attr_writer :driver
-      attr_accessor :track_granularities, :time_zone, :beginning_of_week, :designator
+      attr_writer :driver, :granularities
+      attr_accessor :time_zone, :beginning_of_week, :designator
 
       def initialize
-        @granularities = %i[second minute hour day week month quarter year]
+        @default_granularities = %w[1m 1h 1d 1w 1mo 1q 1y]
         @beginning_of_week = :monday
         @time_zone = 'GMT'
         @designator = nil
@@ -24,9 +24,9 @@ module Trifle
       end
 
       def granularities
-        return @granularities if blank?(track_granularities)
-
-        @granularities & track_granularities
+        (@granularities || @default_granularities).uniq.filter do |grn|
+          Trifle::Stats::Nocturnal::Parser.new(grn).valid?
+        end
       end
 
       def driver

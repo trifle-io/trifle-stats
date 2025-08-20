@@ -36,7 +36,7 @@ module Trifle
           @joined_identifier ? @separator : nil
         end
 
-        def inc(keys:, **values)
+        def inc(keys:, values:)
           data = self.class.pack(hash: { data: values })
 
           operations = keys.map do |key|
@@ -49,7 +49,7 @@ module Trifle
           collection.bulk_write(operations)
         end
 
-        def set(keys:, **values)
+        def set(keys:, values:)
           data = self.class.pack(hash: { data: values })
 
           operations = keys.map do |key|
@@ -62,7 +62,7 @@ module Trifle
           collection.bulk_write(operations)
         end
 
-        def ping(key:, **values)
+        def ping(key:, values:)
           return [] if @joined_identifier
 
           data = self.class.pack(hash: { data: values, at: key.at })

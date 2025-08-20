@@ -3,7 +3,7 @@ RSpec.describe Trifle::Stats::Configuration do
 
   describe '#initialize' do
     it 'sets default values' do
-      expect(configuration.instance_variable_get(:@granularities)).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+      expect(configuration.instance_variable_get(:@default_granularities)).to eq(%w[1m 1h 1d 1w 1mo 1q 1y])
       expect(configuration.beginning_of_week).to eq(:monday)
       expect(configuration.time_zone).to eq('GMT')
       expect(configuration.designator).to be_nil
@@ -38,11 +38,11 @@ RSpec.describe Trifle::Stats::Configuration do
     end
   end
 
-  describe '#track_granularities=' do
-    it 'sets track_granularities' do
-      configuration.track_granularities = [:hour, :day]
+  describe '#granularities=' do
+    it 'sets granularities' do
+      configuration.granularities = ['1h', '1d']
       
-      expect(configuration.track_granularities).to eq([:hour, :day])
+      expect(configuration.granularities).to eq(['1h', '1d'])
     end
   end
 
@@ -119,57 +119,57 @@ RSpec.describe Trifle::Stats::Configuration do
   end
 
   describe '#granularities' do
-    context 'when track_granularities is not set' do
+    context 'when granularities is not set' do
       it 'returns all default granularities' do
-        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.granularities).to eq(%w[1m 1h 1d 1w 1mo 1q 1y])
       end
     end
 
-    context 'when track_granularities is empty array' do
+    context 'when granularities is empty array' do
       it 'returns all default granularities' do
-        configuration.track_granularities = []
+        configuration.granularities = []
         
-        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.granularities).to eq(%w[])
       end
     end
 
-    context 'when track_granularities is nil' do
+    context 'when granularities is nil' do
       it 'returns all default granularities' do
-        configuration.track_granularities = nil
+        configuration.granularities = nil
         
-        expect(configuration.granularities).to eq([:second, :minute, :hour, :day, :week, :month, :quarter, :year])
+        expect(configuration.granularities).to eq(%w[1m 1h 1d 1w 1mo 1q 1y])
       end
     end
 
-    context 'when track_granularities is set' do
-      it 'returns intersection of default granularities and track_granularities' do
-        configuration.track_granularities = [:hour, :day, :month, :invalid_granularity]
+    context 'when granularities is set' do
+      it 'returns intersection of default granularities and granularities' do
+        configuration.granularities = ['1h', '1d', '1y', '1whatever']
         
-        expect(configuration.granularities).to eq([:hour, :day, :month])
+        expect(configuration.granularities).to eq(['1h', '1d', '1y'])
       end
     end
 
-    context 'when track_granularities contains only valid granularities' do
+    context 'when granularities contains only valid granularities' do
       it 'returns only specified granularities in original order' do
-        configuration.track_granularities = [:day, :hour, :year]
+        configuration.granularities = ['1h', '1d', '1y']
         
-        expect(configuration.granularities).to eq([:hour, :day, :year])
+        expect(configuration.granularities).to eq(['1h', '1d', '1y'])
       end
     end
 
-    context 'when track_granularities contains no valid granularities' do
+    context 'when granularities contains no valid granularities' do
       it 'returns empty array' do
-        configuration.track_granularities = [:invalid1, :invalid2]
+        configuration.granularities = ['1foo', '1bar']
         
         expect(configuration.granularities).to eq([])
       end
     end
 
-    context 'when track_granularities contains duplicates' do
+    context 'when granularities contains duplicates' do
       it 'returns unique granularities' do
-        configuration.track_granularities = [:hour, :day, :hour, :day]
+        configuration.granularities = ['1h', '1d', '1h', '1d']
         
-        expect(configuration.granularities).to eq([:hour, :day])
+        expect(configuration.granularities).to eq(['1h', '1d'])
       end
     end
   end

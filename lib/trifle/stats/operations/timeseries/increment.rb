@@ -19,14 +19,15 @@ module Trifle
           end
 
           def key_for(granularity:)
-            at = Nocturnal.new(@at, config: config).send(granularity)
+            pgrn = Nocturnal::Parser.new(granularity)
+            at = Nocturnal.new(@at, config: config).floor(pgrn.offset, pgrn.unit)
             Nocturnal::Key.new(key: key, granularity: granularity, at: at)
           end
 
           def perform
             config.driver.inc(
               keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
-              **values
+              values: values
             )
           end
         end

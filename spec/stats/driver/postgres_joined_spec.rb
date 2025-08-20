@@ -69,7 +69,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     let(:values) { { count: 5, duration: 100 } }
 
     it 'increments values for each key' do
-      driver.inc(keys: keys, **values)
+      driver.inc(keys: keys, values: values)
 
       # Get actual keys from database
       key1 = keys[0].join('::')
@@ -86,7 +86,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       key_str = key.join('::')
       pg_client.exec("INSERT INTO test_stats (key, data) VALUES ('#{key_str}', '{\"count\": 10}')")
       
-      driver.inc(keys: [key], count: 5)
+      driver.inc(keys: [key], values: { count: 5 })
 
       result = pg_client.exec("SELECT data FROM test_stats WHERE key = '#{key_str}'").first
       expect(JSON.parse(result['data'])['count']).to eq(15)
@@ -97,7 +97,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_str = key.join('::')
-      driver.inc(keys: [key], **nested_values)
+      driver.inc(keys: [key], values: nested_values)
 
       result = pg_client.exec("SELECT data FROM test_stats WHERE key = '#{key_str}'").first
       expect(JSON.parse(result['data'])).to eq({
@@ -117,7 +117,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     let(:values) { { count: 10, status: 'active' } }
 
     it 'sets values for each key' do
-      driver.set(keys: keys, **values)
+      driver.set(keys: keys, values: values)
 
       key1 = keys[0].join('::')
       key2 = keys[1].join('::')
@@ -133,7 +133,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       key_str = key.join('::')
       pg_client.exec("INSERT INTO test_stats (key, data) VALUES ('#{key_str}', '{\"count\": 100}')")
       
-      driver.set(keys: [key], count: 10)
+      driver.set(keys: [key], values: { count: 10 })
 
       result = pg_client.exec("SELECT data FROM test_stats WHERE key = '#{key_str}'").first
       expect(JSON.parse(result['data'])['count']).to eq(10)
@@ -144,7 +144,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
       key_str = key.join('::')
-      driver.set(keys: [key], **nested_values)
+      driver.set(keys: [key], values: nested_values)
 
       result = pg_client.exec("SELECT data FROM test_stats WHERE key = '#{key_str}'").first
       expect(JSON.parse(result['data'])).to eq({

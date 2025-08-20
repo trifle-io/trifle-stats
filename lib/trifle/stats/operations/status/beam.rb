@@ -21,7 +21,7 @@ module Trifle
           def perform
             config.driver.ping(
               key: Nocturnal::Key.new(key: key, at: at),
-              **values
+              values: values
             )
           end
         end

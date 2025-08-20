@@ -19,7 +19,7 @@ module Trifle
           "#{self.class.name}(J)"
         end
 
-        def inc(keys:, **values)
+        def inc(keys:, values:)
           keys.map do |key|
             key.prefix = prefix
             pkey = key.join(separator)
@@ -30,7 +30,7 @@ module Trifle
           end
         end
 
-        def set(keys:, **values)
+        def set(keys:, values:)
           keys.map do |key|
             key.prefix = prefix
             pkey = key.join(separator)

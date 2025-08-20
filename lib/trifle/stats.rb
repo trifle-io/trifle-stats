@@ -2,6 +2,8 @@
 
 require 'trifle/stats/mixins/packer'
 require 'trifle/stats/nocturnal'
+require 'trifle/stats/nocturnal/key'
+require 'trifle/stats/nocturnal/parser'
 require 'trifle/stats/series'
 require 'trifle/stats/aggregator/avg'
 require 'trifle/stats/aggregator/max'
