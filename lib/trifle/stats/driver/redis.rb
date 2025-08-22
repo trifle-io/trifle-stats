@@ -9,9 +9,10 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :prefix, :separator
 
-        def initialize(client, prefix: 'trfl')
+        def initialize(client, prefix: 'trfl', system_tracking: true)
           @client = client
           @prefix = prefix
+          @system_tracking = system_tracking
           @separator = '::'
         end
 
@@ -19,13 +20,29 @@ module Trifle
           "#{self.class.name}(J)"
         end
 
-        def inc(keys:, values:)
+        def system_join_for(key:)
+          key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
+          key.prefix = prefix
+          key.join(separator)
+        end
+
+        def system_data_for(key:)
+          self.class.pack(hash: { data: { count: 1, keys: { key.key => 1 } } })
+        end
+
+        def inc(keys:, values:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           keys.map do |key|
             key.prefix = prefix
             pkey = key.join(separator)
 
             self.class.pack(hash: values).each do |k, c|
               client.hincrby(pkey, k, c)
+            end
+            next unless @system_tracking
+
+            skey = system_join_for(key: key)
+            system_data_for(key: key).each do |k, c|
+              client.hincrby(skey, k, c)
             end
           end
         end
@@ -36,6 +53,12 @@ module Trifle
             pkey = key.join(separator)
 
             client.hmset(pkey, *self.class.pack(hash: values))
+            next unless @system_tracking
+
+            skey = system_join_for(key: key)
+            system_data_for(key: key).each do |k, c|
+              client.hincrby(skey, k, c)
+            end
           end
         end
 

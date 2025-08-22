@@ -10,15 +10,12 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :table_name, :ping_table_name
 
-        def separator
-          @joined_identifier ? @separator : nil
-        end
-
-        def initialize(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: true, ping_table_name: nil) # rubocop:disable Layout/LineLength
+        def initialize(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: true, ping_table_name: nil, system_tracking: true) # rubocop:disable Layout/LineLength
           @client = client
           @table_name = table_name
           @ping_table_name = ping_table_name || "#{table_name}_ping"
           @joined_identifier = joined_identifier
+          @system_tracking = system_tracking
           @separator = '::'
         end
 
@@ -40,6 +37,19 @@ module Trifle
           "#{self.class.name}(#{@joined_identifier ? 'J' : 'S'})"
         end
 
+        def separator
+          @joined_identifier ? @separator : nil
+        end
+
+        def system_identifier_for(key:)
+          key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
+          key.identifier(separator)
+        end
+
+        def system_data_for(key:)
+          self.class.pack(hash: { data: { count: 1, keys: { key.key => 1 } } })
+        end
+
         def inc(keys:, values:)
           data = self.class.pack(hash: values)
           client.transaction do |c|
@@ -47,6 +57,7 @@ module Trifle
               identifier = key.identifier(separator)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :inc)
+              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
             end
           end
         end
@@ -70,6 +81,7 @@ module Trifle
               identifier = key.identifier(separator)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :set)
+              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
             end
           end
         end
@@ -120,7 +132,9 @@ module Trifle
 
           data = self.class.pack(hash: { data: values, at: key.at })
           operation = ping_query(key: key.key, at: key.at, data: data)
-          client.transaction { |c| c.execute(operation) }
+          client.transaction do |c|
+            c.execute(operation) # TODO: should use batch_data_operations
+          end
         end
 
         def ping_query(key:, at:, data:)

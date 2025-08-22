@@ -9,11 +9,12 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :collection_name
 
-        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil)
+        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil, system_tracking: true) # rubocop:disable Layout/LineLength
           @client = client
           @collection_name = collection_name
           @joined_identifier = joined_identifier
           @expire_after = expire_after
+          @system_tracking = system_tracking
           @separator = '::'
         end
 
@@ -36,14 +37,24 @@ module Trifle
           @joined_identifier ? @separator : nil
         end
 
+        def system_identifier_for(key:)
+          key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
+          key.identifier(separator)
+        end
+
+        def system_data_for(key:)
+          self.class.pack(hash: { data: { count: 1, keys: { key.key => 1 } } })
+        end
+
         def inc(keys:, values:)
           data = self.class.pack(hash: { data: values })
 
-          operations = keys.map do |key|
+          operations = keys.each_with_object([]) do |key, ops|
             filter = key.identifier(separator)
             expire_at = @expire_after ? key.at + @expire_after : nil
 
-            upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
+            ops << upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
+            ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
           end
 
           collection.bulk_write(operations)
@@ -52,11 +63,12 @@ module Trifle
         def set(keys:, values:)
           data = self.class.pack(hash: { data: values })
 
-          operations = keys.map do |key|
+          operations = keys.each_with_object([]) do |key, ops|
             filter = key.identifier(separator)
             expire_at = @expire_after ? key.at + @expire_after : nil
 
-            upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
+            ops << upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
+            ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
           end
 
           collection.bulk_write(operations)
