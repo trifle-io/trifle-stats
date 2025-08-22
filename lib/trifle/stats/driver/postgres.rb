@@ -45,7 +45,7 @@ module Trifle
         end
 
         def system_data_for(key:)
-          self.class.pack(hash: { data: { count: 1, keys: { key.key => 1 } } })
+          self.class.pack(hash: { count: 1, keys: { key.key => 1 } })
         end
 
         def inc(keys:, values:)
