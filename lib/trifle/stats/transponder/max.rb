@@ -7,12 +7,12 @@ module Trifle
         include Trifle::Stats::Mixins::Packer
         Trifle::Stats::Series.register_transponder(:max, self)
 
-        def transpond(series:, values:, response: 'max') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-          values_keys = values.to_s.split('.')
+        def transpond(series:, paths:, response: 'max') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity
+          path_keys = paths.map { |path| path.to_s.split('.') }
 
           series[:values] = series[:values].map do |data|
-            dvalues = data.dig(*values_keys)
-            next data unless dvalues && dvalues.is_a?(Array)
+            dvalues = path_keys.map { |path_key| data.dig(*path_key) }
+            next data if dvalues.any?(&:nil?)
 
             numeric_values = dvalues.select { |v| v.is_a?(Numeric) }
             next data if numeric_values.empty?

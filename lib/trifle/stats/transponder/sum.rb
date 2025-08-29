@@ -7,12 +7,12 @@ module Trifle
         include Trifle::Stats::Mixins::Packer
         Trifle::Stats::Series.register_transponder(:sum, self)
 
-        def transpond(series:, values:, response: 'sum') # rubocop:disable Metrics/MethodLength
-          values_keys = values.to_s.split('.')
+        def transpond(series:, paths:, response: 'sum') # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity
+          path_keys = paths.map { |path| path.to_s.split('.') }
 
           series[:values] = series[:values].map do |data|
-            dvalues = data.dig(*values_keys)
-            next data unless dvalues && dvalues.is_a?(Array)
+            dvalues = path_keys.map { |path_key| data.dig(*path_key) }
+            next data if dvalues.any?(&:nil?)
 
             dres = dvalues.sum { |v| v.is_a?(Numeric) ? v : 0 }
             signal = {
