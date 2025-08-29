@@ -3,8 +3,8 @@
 module Trifle
   module Stats
     class Aggregator
-      class Avg
-        Trifle::Stats::Series.register_aggregator(:avg, self)
+      class Mean
+        Trifle::Stats::Series.register_aggregator(:mean, self)
 
         def aggregate(series:, path:, slices: 1)
           return [] if series[:at].empty?

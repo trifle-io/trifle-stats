@@ -35,7 +35,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
     context 'with standard parameters' do
       it 'calculates standard deviation and adds it to the series data' do
         original_series = series.series.dup
-        series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+        series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
 
         # Standard deviation formula: sqrt((n*∑x² - (∑x)²) / (n*(n-1)))
         # For first value: sqrt((3*310 - 30²) / (3*2)) = sqrt((930 - 900) / 6) = sqrt(5) ≈ 2.236
@@ -49,7 +49,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       end
 
       it 'handles different path targets independently' do
-        series.transpond.standard_deviation(sum: 'scores.sum', count: 'scores.count', square: 'scores.square', response: 'scores.sd')
+        series.transpond.standard_deviation(left: 'scores.sum', right: 'scores.count', square: 'scores.square', response: 'scores.sd')
 
         # For scores first value: sqrt((4*430 - 40²) / (4*3)) = sqrt((1720 - 1600) / 12) = sqrt(10) ≈ 3.162
         expected_sd = Math.sqrt((4 * 430 - 40 * 40) / (4 * 3))
@@ -61,7 +61,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
 
     context 'with custom key name' do
       it 'uses custom key for the calculated standard deviation' do
-        series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.stddev')
+        series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.stddev')
 
         expect(series.series[:values].first['measurements']).to include('stddev')
         expect(series.series[:values].first['measurements']).not_to have_key('sd')
@@ -75,8 +75,8 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
         custom_series = Trifle::Stats::Series.new(custom_series_data)
 
         custom_series.transpond.standard_deviation(
-          sum: 'metrics.total', 
-          count: 'metrics.num', 
+          left: 'metrics.total', 
+          right: 'metrics.num', 
           square: 'metrics.squared',
           response: 'metrics.sd'
         )
@@ -96,7 +96,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:root_series) { Trifle::Stats::Series.new(root_series_data) }
 
       it 'handles empty path correctly' do
-        root_series.transpond.standard_deviation(sum: 'sum', count: 'count', square: 'square', response: 'sd')
+        root_series.transpond.standard_deviation(left: 'sum', right: 'count', square: 'square', response: 'sd')
 
         expected_sd = Math.sqrt((3 * 310 - 30 * 30) / (3 * 2))
         # When path is empty, key is created directly at root level (same as nil path)
@@ -105,7 +105,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       end
 
       it 'handles nil path correctly' do
-        root_series.transpond.standard_deviation(sum: 'sum', count: 'count', square: 'square', response: 'sd')
+        root_series.transpond.standard_deviation(left: 'sum', right: 'count', square: 'square', response: 'sd')
 
         expected_sd = Math.sqrt((3 * 310 - 30 * 30) / (3 * 2))
         # When path is nil, the key becomes just 'sd' at root level
@@ -128,7 +128,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:nested_series) { Trifle::Stats::Series.new(nested_series_data) }
 
       it 'calculates standard deviation for deeply nested paths' do
-        nested_series.transpond.standard_deviation(sum: 'analytics.performance.data.sum', count: 'analytics.performance.data.count', square: 'analytics.performance.data.square', response: 'analytics.performance.data.sd')
+        nested_series.transpond.standard_deviation(left: 'analytics.performance.data.sum', right: 'analytics.performance.data.count', square: 'analytics.performance.data.square', response: 'analytics.performance.data.sd')
 
         expected_sd = Math.sqrt((3 * 310 - 30 * 30) / (3 * 2))
         expected_value = nested_series.series[:values].first
@@ -152,8 +152,8 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
         complex_series = Trifle::Stats::Series.new(complex_nested_data)
 
         complex_series.transpond.standard_deviation(
-          sum: 'metrics.totals.value', 
-          count: 'metrics.counters.items',
+          left: 'metrics.totals.value', 
+          right: 'metrics.counters.items',
           square: 'metrics.squares.sum',
           response: 'metrics.sd'
         )
@@ -183,7 +183,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:incomplete_series) { Trifle::Stats::Series.new(incomplete_series_data) }
 
       it 'skips calculation when any required field is missing' do
-        incomplete_series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+        incomplete_series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
 
         expected_sd = Math.sqrt((3 * 310 - 30 * 30) / (3 * 2))
         expect(incomplete_series.series[:values]).to eq([
@@ -195,7 +195,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       end
 
       it 'handles completely missing path gracefully' do
-        incomplete_series.transpond.standard_deviation(sum: 'nonexistent.sum', count: 'nonexistent.count', square: 'nonexistent.square', response: 'nonexistent.sd')
+        incomplete_series.transpond.standard_deviation(left: 'nonexistent.sum', right: 'nonexistent.count', square: 'nonexistent.square', response: 'nonexistent.sd')
 
         # Should remain unchanged
         expect(incomplete_series.series[:values]).to eq([
@@ -227,19 +227,19 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:edge_series) { Trifle::Stats::Series.new(edge_case_data) }
 
       it 'handles all zero values correctly' do
-        edge_series.transpond.standard_deviation(sum: 'metrics.sum', count: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
+        edge_series.transpond.standard_deviation(left: 'metrics.sum', right: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
         expect(edge_series.series[:values][0]['metrics']['sd']).to eq(0.0)
       end
 
       it 'handles count = 1 gracefully (division by zero in denominator)' do
-        edge_series.transpond.standard_deviation(sum: 'metrics.sum', count: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
+        edge_series.transpond.standard_deviation(left: 'metrics.sum', right: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
         
         # Division by (count-1) when count=1 should result in NaN, converted to 0
         expect(edge_series.series[:values][1]['metrics']['sd']).to eq(0.0)
       end
 
       it 'handles count = 0 gracefully' do
-        edge_series.transpond.standard_deviation(sum: 'metrics.sum', count: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
+        edge_series.transpond.standard_deviation(left: 'metrics.sum', right: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
         
         # Division by zero should result in NaN, converted to 0
         result = edge_series.series[:values][2]['metrics']['sd']
@@ -248,7 +248,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       end
 
       it 'handles negative sum correctly' do
-        edge_series.transpond.standard_deviation(sum: 'metrics.sum', count: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
+        edge_series.transpond.standard_deviation(left: 'metrics.sum', right: 'metrics.count', square: 'metrics.square', response: 'metrics.sd')
         
         # Formula should still work with negative sum
         expected_sd = Math.sqrt((3 * 310 - (-30) * (-30)) / (3 * 2))
@@ -271,7 +271,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:precision_series) { Trifle::Stats::Series.new(precision_data) }
 
       it 'calculates standard deviation with correct precision' do
-        precision_series.transpond.standard_deviation(sum: 'perfect.sum', count: 'perfect.count', square: 'perfect.square', response: 'perfect.sd')
+        precision_series.transpond.standard_deviation(left: 'perfect.sum', right: 'perfect.count', square: 'perfect.square', response: 'perfect.sd')
         
         result = precision_series.series[:values].first['perfect']['sd']
         expect(result).to eq(1.0)
@@ -280,8 +280,8 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
 
     context 'with multiple transponder calls' do
       it 'can apply multiple standard deviations to different paths' do
-        series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
-        series.transpond.standard_deviation(sum: 'scores.sum', count: 'scores.count', square: 'scores.square', response: 'scores.score_sd')
+        series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+        series.transpond.standard_deviation(left: 'scores.sum', right: 'scores.count', square: 'scores.square', response: 'scores.score_sd')
 
         first_value = series.series[:values].first
         expect(first_value['measurements']).to include('sd')
@@ -289,10 +289,10 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       end
 
       it 'preserves existing calculated values when adding new ones' do
-        series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+        series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
         original_sd = series.series[:values].first['measurements']['sd']
 
-        series.transpond.standard_deviation(sum: 'scores.sum', count: 'scores.count', square: 'scores.square', response: 'scores.sd')
+        series.transpond.standard_deviation(left: 'scores.sum', right: 'scores.count', square: 'scores.square', response: 'scores.sd')
 
         expect(series.series[:values].first['measurements']['sd']).to eq(original_sd)
         expect(series.series[:values].first['scores']).to include('sd')
@@ -312,7 +312,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
       let(:realistic_series) { Trifle::Stats::Series.new(realistic_data) }
 
       it 'calculates standard deviation for realistic data' do
-        realistic_series.transpond.standard_deviation(sum: 'sample.sum', count: 'sample.count', square: 'sample.square', response: 'sample.sd')
+        realistic_series.transpond.standard_deviation(left: 'sample.sum', right: 'sample.count', square: 'sample.square', response: 'sample.sd')
         
         # Manual calculation: sqrt((3*155 - 21²) / (3*2)) = sqrt((465-441)/6) = sqrt(4) = 2.0
         result = realistic_series.series[:values].first['sample']['sd']
@@ -328,7 +328,7 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
 
     it 'modifies the series in place' do
       original_object_id = series.series[:values].object_id
-      series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+      series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
       
       # The series values array gets replaced during transponder operations
       expect(series.series[:values]).not_to eq(original_object_id)
@@ -336,29 +336,29 @@ RSpec.describe Trifle::Stats::Transponder::StandardDeviation do
     end
 
     it 'returns the modified series for chaining' do
-      result = series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+      result = series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
       expect(result).to eq(series.series)
     end
 
     it 'can be combined with other series operations' do
       # Add standard deviations, then aggregate them
-      series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
-      avg_sd = series.aggregate.avg(path: 'measurements.sd')
+      series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+      mean_sd = series.aggregate.mean(path: 'measurements.sd')
       
-      # Should get average of all calculated standard deviations
-      expect(avg_sd.first).to be_a(Numeric) # Could be Float or BigDecimal
-      expect(avg_sd.first).to be > 0
+      # Should get mean of all calculated standard deviations
+      expect(mean_sd.first).to be_a(Numeric) # Could be Float or BigDecimal
+      expect(mean_sd.first).to be > 0
     end
 
     it 'can be combined with other transponders' do
       # Add standard deviation, then add average using the same data
-      series.transpond.standard_deviation(sum: 'measurements.sum', count: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
-      series.transpond.average(sum: 'measurements.sum', count: 'measurements.count', response: 'measurements.average')
+      series.transpond.standard_deviation(left: 'measurements.sum', right: 'measurements.count', square: 'measurements.square', response: 'measurements.sd')
+      series.transpond.divide(left: 'measurements.sum', right: 'measurements.count', response: 'measurements.mean')
       
       first_measurements = series.series[:values].first['measurements']
       expect(first_measurements).to include('sd')
-      expect(first_measurements).to include('average')
-      expect(first_measurements['sd']).not_to eq(first_measurements['average'])
+      expect(first_measurements).to include('mean')
+      expect(first_measurements['sd']).not_to eq(first_measurements['mean'])
     end
   end
 end

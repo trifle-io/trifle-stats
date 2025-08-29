@@ -298,18 +298,18 @@ RSpec.describe Trifle::Stats::Aggregator::Max do
       expect(maximum.first).to be_a(Numeric)
     end
 
-    it 'provides different results than sum, avg, and min for same data' do
+    it 'provides different results than sum, mean, and min for same data' do
       sum_result = series.aggregate.sum(path: 'count')
-      avg_result = series.aggregate.avg(path: 'count')
+      mean_result = series.aggregate.mean(path: 'count')
       min_result = series.aggregate.min(path: 'count')
       max_result = series.aggregate.max(path: 'count')
 
       expect(sum_result).to eq([55]) # 10 + 25 + 5 + 15
-      expect(avg_result).to eq([13.75]) # 55 / 4 = 13.75
+      expect(mean_result).to eq([13.75]) # 55 / 4 = 13.75
       expect(min_result).to eq([5])  # min(10, 25, 5, 15)
       expect(max_result).to eq([25]) # max(10, 25, 5, 15)
       
-      expect([sum_result, avg_result, min_result, max_result].uniq.length).to eq(4) # All different
+      expect([sum_result, mean_result, min_result, max_result].uniq.length).to eq(4) # All different
     end
 
     it 'max is always >= min for the same data' do

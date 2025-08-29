@@ -1,6 +1,6 @@
 require 'time'
 
-RSpec.describe Trifle::Stats::Aggregator::Avg do
+RSpec.describe Trifle::Stats::Aggregator::Mean do
   let(:series_data) do
     {
       at: [
@@ -22,13 +22,13 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
   describe '#aggregate' do
     context 'with simple path' do
       it 'calculates average of all values for given path' do
-        result = series.aggregate.avg(path: 'count')
+        result = series.aggregate.mean(path: 'count')
 
         expect(result).to eq([12.5]) # (10 + 20 + 8 + 12) / 4 = 50 / 4 = 12.5
       end
 
       it 'handles integer division correctly' do
-        result = series.aggregate.avg(path: 'errors')
+        result = series.aggregate.mean(path: 'errors')
 
         expect(result).to eq([1.75]) # (2 + 4 + 1 + 0) / 4 = 7 / 4 = 1.75
       end
@@ -36,13 +36,13 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
 
     context 'with nested path' do
       it 'calculates average of nested values using dot notation' do
-        result = series.aggregate.avg(path: 'stats.requests')
+        result = series.aggregate.mean(path: 'stats.requests')
 
         expect(result).to eq([125]) # (100 + 200 + 80 + 120) / 4 = 500 / 4 = 125
       end
 
       it 'handles nested paths with different structure' do
-        result = series.aggregate.avg(path: 'stats.responses')
+        result = series.aggregate.mean(path: 'stats.responses')
 
         expect(result).to eq([120.75]) # (95 + 190 + 78 + 120) / 4 = 483 / 4 = 120.75
       end
@@ -50,19 +50,19 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
 
     context 'with slicing' do
       it 'calculates average for each slice separately' do
-        result = series.aggregate.avg(path: 'count', slices: 2)
+        result = series.aggregate.mean(path: 'count', slices: 2)
 
         expect(result).to eq([15, 10]) # [(10+20)/2, (8+12)/2] = [15, 10]
       end
 
       it 'handles slicing with 4 slices (each value separate)' do
-        result = series.aggregate.avg(path: 'count', slices: 4)
+        result = series.aggregate.mean(path: 'count', slices: 4)
 
         expect(result).to eq([10, 20, 8, 12]) # Each slice has one value
       end
 
       it 'handles slicing with nested paths' do
-        result = series.aggregate.avg(path: 'stats.requests', slices: 2)
+        result = series.aggregate.mean(path: 'stats.requests', slices: 2)
 
         expect(result).to eq([150, 100]) # [(100+200)/2, (80+120)/2] = [150, 100]
       end
@@ -88,13 +88,13 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       let(:sparse_series) { Trifle::Stats::Series.new(sparse_series_data) }
 
       it 'ignores nil values and averages existing ones' do
-        result = sparse_series.aggregate.avg(path: 'count')
+        result = sparse_series.aggregate.mean(path: 'count')
 
         expect(result.first.round(2)).to eq(12.67) # (10 + 8 + 20) / 3 = 38 / 3 = 12.666...
       end
 
       it 'handles slicing with missing values' do
-        result = sparse_series.aggregate.avg(path: 'count', slices: 2)
+        result = sparse_series.aggregate.mean(path: 'count', slices: 2)
 
         expect(result).to eq([10, 14]) # [10/1, (8+20)/2] = [10, 14]
       end
@@ -105,7 +105,7 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       let(:empty_series) { Trifle::Stats::Series.new(empty_series_data) }
 
       it 'returns empty array for empty series' do
-        result = empty_series.aggregate.avg(path: 'count')
+        result = empty_series.aggregate.mean(path: 'count')
 
         expect(result).to eq([])
       end
@@ -127,7 +127,7 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       let(:nil_series) { Trifle::Stats::Series.new(nil_series_data) }
 
       it 'returns zero when all values are nil (division by zero protection)' do
-        result = nil_series.aggregate.avg(path: 'count')
+        result = nil_series.aggregate.mean(path: 'count')
 
         expect(result).to eq([0]) # count.zero? ? 0 : sum / count
       end
@@ -151,7 +151,7 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       let(:zero_series) { Trifle::Stats::Series.new(zero_series_data) }
 
       it 'includes zero values in average calculation' do
-        result = zero_series.aggregate.avg(path: 'count')
+        result = zero_series.aggregate.mean(path: 'count')
 
         expect(result).to eq([2]) # (0 + 0 + 6) / 3 = 6 / 3 = 2
       end
@@ -159,13 +159,13 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
 
     context 'with non-existent path' do
       it 'returns zero for completely missing path (division by zero protection)' do
-        result = series.aggregate.avg(path: 'nonexistent')
+        result = series.aggregate.mean(path: 'nonexistent')
 
         expect(result).to eq([0]) # All nils, compact removes them, empty count triggers zero protection
       end
 
       it 'returns zero for missing nested path' do
-        result = series.aggregate.avg(path: 'stats.missing')
+        result = series.aggregate.mean(path: 'stats.missing')
 
         expect(result).to eq([0])
       end
@@ -181,7 +181,7 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       let(:larger_series) { Trifle::Stats::Series.new(larger_series_data) }
 
       it 'handles slicing with 3 slices' do
-        result = larger_series.aggregate.avg(path: 'count', slices: 3)
+        result = larger_series.aggregate.mean(path: 'count', slices: 3)
 
         # With 9 values and 3 slices: all 9 values used, 3 values per slice
         # Values: [10, 20, 30, 40, 50, 60, 70, 80, 90]
@@ -190,7 +190,7 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
       end
 
       it 'handles uneven slicing' do
-        result = larger_series.aggregate.avg(path: 'count', slices: 4)
+        result = larger_series.aggregate.mean(path: 'count', slices: 4)
 
         # With 9 values and 4 slices: takes last 8 values, 2 values per slice
         # Values: [20, 30, 40, 50, 60, 70, 80, 90]
@@ -201,23 +201,23 @@ RSpec.describe Trifle::Stats::Aggregator::Avg do
   end
 
   describe 'integration with Series' do
-    it 'is properly registered as avg aggregator' do
-      expect(series.aggregate).to respond_to(:avg)
+    it 'is properly registered as mean aggregator' do
+      expect(series.aggregate).to respond_to(:mean)
     end
 
     it 'can be chained with other operations' do
-      averaged = series.aggregate.avg(path: 'count')
+      averaged = series.aggregate.mean(path: 'count')
       expect(averaged).to be_an(Array)
       expect(averaged.first).to be_a(Numeric)
     end
 
     it 'provides different results than sum for same data' do
       sum_result = series.aggregate.sum(path: 'count')
-      avg_result = series.aggregate.avg(path: 'count')
+      mean_result = series.aggregate.mean(path: 'count')
 
       expect(sum_result).to eq([50]) # 10 + 20 + 8 + 12
-      expect(avg_result).to eq([12.5]) # 50 / 4
-      expect(sum_result).not_to eq(avg_result)
+      expect(mean_result).to eq([12.5]) # 50 / 4
+      expect(sum_result).not_to eq(mean_result)
     end
   end
 end

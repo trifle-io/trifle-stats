@@ -250,16 +250,16 @@ RSpec.describe Trifle::Stats::Aggregator::Min do
       expect(minimum.first).to be_a(Numeric)
     end
 
-    it 'provides different results than sum and avg for same data' do
+    it 'provides different results than sum and mean for same data' do
       sum_result = series.aggregate.sum(path: 'count')
-      avg_result = series.aggregate.avg(path: 'count')
+      mean_result = series.aggregate.mean(path: 'count')
       min_result = series.aggregate.min(path: 'count')
 
       expect(sum_result).to eq([55]) # 10 + 25 + 5 + 15
-      expect(avg_result).to eq([13.75]) # 55 / 4 = 13.75
+      expect(mean_result).to eq([13.75]) # 55 / 4 = 13.75
       expect(min_result).to eq([5])  # min(10, 25, 5, 15)
       
-      expect([sum_result, avg_result, min_result].uniq.length).to eq(3) # All different
+      expect([sum_result, mean_result, min_result].uniq.length).to eq(3) # All different
     end
   end
 end

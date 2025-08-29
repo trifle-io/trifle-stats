@@ -3,11 +3,11 @@
 module Trifle
   module Stats
     class Transponder
-      class Ratio
+      class Add
         include Trifle::Stats::Mixins::Packer
-        Trifle::Stats::Series.register_transponder(:ratio, self)
+        Trifle::Stats::Series.register_transponder(:add, self)
 
-        def transpond(series:, left:, right:, response: 'ratio') # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def transpond(series:, left:, right:, response: 'add') # rubocop:disable Metrics/MethodLength
           left_keys = left.to_s.split('.')
           right_keys = right.to_s.split('.')
 
@@ -16,9 +16,9 @@ module Trifle
             dright = data.dig(*right_keys)
             next data unless dleft && dright
 
-            dres = (dleft / dright) * 100
+            dres = dleft + dright
             signal = {
-              response => dres.nan? ? BigDecimal(0) : dres
+              response => dres
             }
             self.class.deep_merge(data, self.class.unpack(hash: signal))
           end
