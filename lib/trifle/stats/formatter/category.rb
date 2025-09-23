@@ -7,23 +7,50 @@ module Trifle
         Trifle::Stats::Series.register_formatter(:category, self)
 
         def format(series:, path:, slices: 1, &block)
-          return [] if series[:at].empty?
+          values = series[:values] || []
+          return {} if values.empty?
 
-          keys = path.split('.')
-          result = series[:at].zip(series[:values].map { |v| v.dig(*keys) || {} })
-          sliced(result: result, slices: slices, block: block)
+          segments = PathUtils.split_path(path)
+          resolved_paths = PathUtils.resolve_concrete_paths(values, segments)
+
+          aggregated = slice(values_list: values, resolved_paths: resolved_paths, slices: slices, block: block)
+          slices == 1 ? aggregated.first : aggregated
         end
 
         private
 
-        def sliced(result:, slices:, block: nil) # rubocop:disable Metrics/AbcSize
-          result[(result.count - (result.count / slices * slices))..].each_slice(result.count / slices).map do |slice|
-            slice.each_with_object(Hash.new(0)) do |(_at, data), map|
-              data.each do |key, value|
-                k, v = block ? block.call(key, value) : [key.to_s, value.to_f]
-                map[k] += v
-              end
+        def slice(values_list:, resolved_paths:, slices:, block: nil)
+          return [] if values_list.empty?
+
+          slice_size = values_list.count / slices
+          remainder = values_list.count - (slice_size * slices)
+          relevant = values_list[remainder..]
+
+          relevant.each_slice(slice_size).map do |slice_values|
+            aggregate_slice(slice_values: slice_values, resolved_paths: resolved_paths, block: block)
+          end
+        end
+
+        def aggregate_slice(slice_values:, resolved_paths:, block: nil)
+          slice_values.each_with_object(Hash.new(0.0)) do |data, acc|
+            resolved_paths.each do |path_segments|
+              full_key = path_segments.join('.')
+              raw_value = PathUtils.fetch_path(data, path_segments)
+
+              key, numeric_value = apply_transform(block, full_key, raw_value)
+              acc[key] += (numeric_value || 0).to_f
             end
+          end
+        end
+
+        def apply_transform(block, key, value)
+          return [key, value] unless block
+
+          result = block.call(key, value)
+          if result.is_a?(Array) && result.size == 2
+            [result[0].to_s, result[1]]
+          else
+            [key, result]
           end
         end
       end
