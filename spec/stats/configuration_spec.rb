@@ -7,6 +7,10 @@ RSpec.describe Trifle::Stats::Configuration do
       expect(configuration.beginning_of_week).to eq(:monday)
       expect(configuration.time_zone).to eq('GMT')
       expect(configuration.designator).to be_nil
+      expect(configuration.buffer_enabled).to be true
+      expect(configuration.buffer_duration).to eq(Trifle::Stats::Buffer::DEFAULT_DURATION)
+      expect(configuration.buffer_size).to eq(Trifle::Stats::Buffer::DEFAULT_SIZE)
+      expect(configuration.buffer_aggregate).to be true
     end
   end
 
@@ -17,6 +21,16 @@ RSpec.describe Trifle::Stats::Configuration do
       configuration.driver = mock_driver
       
       expect(configuration.instance_variable_get(:@driver)).to eq(mock_driver)
+    end
+
+    it 'resets buffer when driver changes' do
+      configuration.driver = mock_driver
+      buffer = instance_double(Trifle::Stats::Buffer)
+      allow(Trifle::Stats::Buffer).to receive(:new).and_return(buffer)
+      configuration.storage
+      expect(buffer).to receive(:shutdown!)
+
+      configuration.driver = instance_double(Trifle::Stats::Driver::Process)
     end
   end
 
@@ -35,6 +49,52 @@ RSpec.describe Trifle::Stats::Configuration do
       it 'raises DriverNotFound error' do
         expect { configuration.driver }.to raise_error(Trifle::Stats::DriverNotFound)
       end
+    end
+  end
+
+  describe '#storage' do
+    let(:mock_driver) { instance_double(Trifle::Stats::Driver::Process) }
+
+    before { configuration.driver = mock_driver }
+
+    context 'when buffer is enabled' do
+      it 'returns buffered storage' do
+        buffer = instance_double(Trifle::Stats::Buffer)
+        allow(Trifle::Stats::Buffer).to receive(:new).and_return(buffer)
+
+        expect(configuration.storage).to eq(buffer)
+      end
+    end
+
+    context 'when buffer is disabled' do
+      it 'returns driver' do
+        configuration.buffer_enabled = false
+
+        expect(configuration.storage).to eq(mock_driver)
+      end
+    end
+
+    it 'rebuilds buffer when settings change' do
+      buffer = instance_double(Trifle::Stats::Buffer)
+      allow(Trifle::Stats::Buffer).to receive(:new).and_return(buffer)
+      configuration.storage
+
+      expect(buffer).to receive(:shutdown!)
+      configuration.buffer_duration = 5
+    end
+  end
+
+  describe '#buffer_enabled=' do
+    it 'disables buffer and resets storage' do
+      buffer = instance_double(Trifle::Stats::Buffer)
+      configuration.driver = instance_double(Trifle::Stats::Driver::Process)
+      allow(Trifle::Stats::Buffer).to receive(:new).and_return(buffer)
+      configuration.storage
+
+      expect(buffer).to receive(:shutdown!)
+      configuration.buffer_enabled = false
+
+      expect(configuration.storage).to eq(configuration.driver)
     end
   end
 

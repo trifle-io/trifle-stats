@@ -25,7 +25,7 @@ module Trifle
           end
 
           def perform
-            config.driver.set(
+            config.storage.set(
               keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
               values: values
             )

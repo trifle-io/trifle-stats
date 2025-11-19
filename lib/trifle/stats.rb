@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'trifle/stats/mixins/packer'
+require 'trifle/stats/buffer'
 require 'trifle/stats/nocturnal'
 require 'trifle/stats/nocturnal/key'
 require 'trifle/stats/nocturnal/parser'

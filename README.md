@@ -72,7 +72,35 @@ Trifle::Stats supports multiple backends:
 - **Custom aggregators** - Sum, average, min, max with custom logic
 - **Series operations** - Advanced data manipulation and calculations
 - **Performance optimized** - Efficient storage and retrieval patterns
+- **Buffered writes** - Queue metrics locally before flushing to the driver
 - **Driver flexibility** - Switch between storage backends easily
+
+## Buffered Persistence
+
+Every `track/assert/assort` call can be buffered before touching the driver. The buffer is enabled by
+default and flushes on an interval, when the queue reaches a configurable size, and again on shutdown
+(`SIGTERM`/`at_exit`).
+
+Available configuration options:
+
+- `buffer_enabled` (default: `true`) – Disable to write-through synchronously
+- `buffer_duration` (default: `1` second) – Maximum time between automatic flushes
+- `buffer_size` (default: `256`) – Maximum queued actions before forcing a flush
+- `buffer_aggregate` (default: `true`) – Combine repeated operations on the same key set
+
+Example:
+
+```ruby
+Trifle::Stats.configure do |config|
+  config.driver = Trifle::Stats::Driver::Redis.new(Redis.new)
+  config.buffer_duration = 5   # flush every ~5 seconds
+  config.buffer_size = 100     # ...or sooner when 100 actions are enqueued
+  config.buffer_aggregate = true
+end
+```
+
+If your application manages database connections manually (e.g. ActiveRecord with a pool size of 1),
+increase the pool size or disable buffering to avoid starving other threads.
 
 ## Testing
 

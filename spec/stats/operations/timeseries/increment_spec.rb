@@ -6,6 +6,7 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
   let(:mock_config) do
     instance_double(Trifle::Stats::Configuration).tap do |config|
       allow(config).to receive(:driver).and_return(mock_driver)
+      allow(config).to receive(:storage).and_return(mock_driver)
       allow(config).to receive(:granularities).and_return(['1h', '1d'])
       allow(config).to receive(:time_zone).and_return('UTC')
       allow(config).to receive(:beginning_of_week).and_return(:monday)
