@@ -22,7 +22,6 @@ require 'trifle/stats/formatter/path_utils'
 require 'trifle/stats/formatter/category'
 require 'trifle/stats/formatter/timeline'
 require 'trifle/stats/configuration'
-require 'trifle/stats/operations/timeseries/classify'
 require 'trifle/stats/operations/timeseries/increment'
 require 'trifle/stats/operations/timeseries/set'
 require 'trifle/stats/operations/timeseries/values'
@@ -66,15 +65,6 @@ module Trifle
 
     def self.assert(key:, at:, values:, config: nil)
       Trifle::Stats::Operations::Timeseries::Set.new(
-        key: key,
-        at: at,
-        values: values,
-        config: config
-      ).perform
-    end
-
-    def self.assort(key:, at:, values:, config: nil)
-      Trifle::Stats::Operations::Timeseries::Classify.new(
         key: key,
         at: at,
         values: values,

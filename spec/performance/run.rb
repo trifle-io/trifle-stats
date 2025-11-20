@@ -12,11 +12,6 @@ data = JSON.parse(ARGV[1])
 puts "Testing #{count}x #{data} increments"
 results = Performance::Drivers.new.configurations.map do |config|
   now = Time.now
-  assort = Benchmark.realtime do
-    count.times do
-      Trifle::Stats.assort(key: 'perf_assort', values: data, at: now, config: config)
-    end
-  end
 
   assert = Benchmark.realtime do
     count.times do
@@ -32,9 +27,8 @@ results = Performance::Drivers.new.configurations.map do |config|
 
   values = Benchmark.realtime do
     count.times do
-      # Trifle::Stats.values(key: 'perf_assort', from: now, to: now, granularity: '1h', config: config)
-      Trifle::Stats.values(key: 'perf_assert', from: now, to: now, granularity: '1h', config: config)
-      # Trifle::Stats.values(key: 'perf_track', from: now, to: now, granularity: '1h', config: config)
+      # Trifle::Stats.values(key: 'perf_assert', from: now, to: now, granularity: '1h', config: config)
+      Trifle::Stats.values(key: 'perf_track', from: now, to: now, granularity: '1h', config: config)
     end
   end
 
@@ -50,10 +44,10 @@ results = Performance::Drivers.new.configurations.map do |config|
     end
   end
 
-  {name: config.driver.description, assort: assort.round(4), assert: assert.round(4), track: track.round(4), values: values.round(4), beam: beam.round(4), scan: scan.round(4)}
+  {name: config.driver.description, assert: assert.round(4), track: track.round(4), values: values.round(4), beam: beam.round(4), scan: scan.round(4)}
 end
 
-puts "DRIVER\t\t\t\t\t\tASSORT\t\tASSERT\t\tTRACK\t\tVALUES\t\tBEAM\t\tSCAN"
+puts "DRIVER\t\t\t\t\t\tASSERT\t\tTRACK\t\tVALUES\t\tBEAM\t\tSCAN"
 results.each do |result|
-  puts "#{result[:name]}#{result[:name].length < 32 ? "\t" : nil}\t\t#{result[:assort]}s\t\t#{result[:assert]}s\t\t#{result[:track]}s\t\t#{result[:values]}s\t\t#{result[:beam]}s\t\t#{result[:scan]}s"
+  puts "#{result[:name]}#{result[:name].length < 32 ? "\t" : nil}\t\t#{result[:assert]}s\t\t#{result[:track]}s\t\t#{result[:values]}s\t\t#{result[:beam]}s\t\t#{result[:scan]}s"
 end

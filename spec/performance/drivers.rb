@@ -12,7 +12,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Redis.new(client, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end
@@ -24,7 +23,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Mongo.new(client, joined_identifier: false, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
        config.buffer_enabled = false
       end
     end
@@ -36,7 +34,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Mongo.new(client, expire_after: 10, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end
@@ -50,7 +47,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Postgres.new(client, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
        config.buffer_enabled = false
       end
     end
@@ -64,7 +60,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Postgres.new(client, joined_identifier: false, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end
@@ -72,7 +67,6 @@ module Performance
     def process_config
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Process.new
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end
@@ -83,7 +77,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_joined.db'), system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end
@@ -94,7 +87,6 @@ module Performance
 
       Trifle::Stats::Configuration.new.tap do |config|
         config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_separated.db'), joined_identifier: false, system_tracking: true)
-        config.designator = Trifle::Stats::Designator::Linear.new(min: 0, max: 100, step: 10)
         config.buffer_enabled = false
       end
     end

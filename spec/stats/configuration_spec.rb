@@ -6,7 +6,6 @@ RSpec.describe Trifle::Stats::Configuration do
       expect(configuration.instance_variable_get(:@default_granularities)).to eq(%w[1m 1h 1d 1w 1mo 1q 1y])
       expect(configuration.beginning_of_week).to eq(:monday)
       expect(configuration.time_zone).to eq('GMT')
-      expect(configuration.designator).to be_nil
       expect(configuration.buffer_enabled).to be true
       expect(configuration.buffer_duration).to eq(Trifle::Stats::Buffer::DEFAULT_DURATION)
       expect(configuration.buffer_size).to eq(Trifle::Stats::Buffer::DEFAULT_SIZE)
@@ -119,16 +118,6 @@ RSpec.describe Trifle::Stats::Configuration do
       configuration.beginning_of_week = :sunday
       
       expect(configuration.beginning_of_week).to eq(:sunday)
-    end
-  end
-
-  describe '#designator=' do
-    let(:mock_designator) { instance_double(Trifle::Stats::Designator::Linear) }
-
-    it 'sets designator' do
-      configuration.designator = mock_designator
-      
-      expect(configuration.designator).to eq(mock_designator)
     end
   end
 

@@ -6,14 +6,13 @@ module Trifle
   module Stats
     class Configuration
       attr_writer :granularities
-      attr_accessor :time_zone, :beginning_of_week, :designator
+      attr_accessor :time_zone, :beginning_of_week
       attr_reader :buffer_enabled, :buffer_duration, :buffer_size, :buffer_aggregate
 
       def initialize
         @default_granularities = %w[1m 1h 1d 1w 1mo 1q 1y]
         @beginning_of_week = :monday
         @time_zone = 'GMT'
-        @designator = nil
         @buffer_enabled = true
         @buffer_duration = Trifle::Stats::Buffer::DEFAULT_DURATION
         @buffer_size = Trifle::Stats::Buffer::DEFAULT_SIZE
