@@ -60,12 +60,27 @@ RSpec.describe Trifle::Stats::Buffer do
   end
 
   describe 'time based flushing' do
-    it 'flushes automatically after configured duration' do
+    it 'flushes automatically after configured duration once pending work is processed' do
       buffer = described_class.new(driver: driver, duration: 0.1, size: 10, aggregate: false, async: true)
       allow(driver).to receive(:inc)
 
       buffer.inc(keys: [key], values: { count: 1 })
+      sleep(0.12)
+      expect(driver).not_to have_received(:inc)
+
+      described_class.run_pending!
+      buffer.shutdown!
+
+      expect(driver).to have_received(:inc).once
+    end
+
+    it 'falls back to flushing on ticker thread when pending work is ignored' do
+      buffer = described_class.new(driver: driver, duration: 0.05, size: 10, aggregate: false, async: true)
+      allow(driver).to receive(:inc)
+
+      buffer.inc(keys: [key], values: { count: 3 })
       sleep(0.2)
+
       buffer.shutdown!
 
       expect(driver).to have_received(:inc).once

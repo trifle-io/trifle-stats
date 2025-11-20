@@ -15,9 +15,38 @@ module Trifle
           registry_mutex.synchronize do
             registry.delete(buffer)
           end
+          pending_mutex.synchronize do
+            pending.delete(buffer)
+          end
+        end
+
+        def enqueue_pending(buffer)
+          pending_mutex.synchronize do
+            pending << buffer unless pending.include?(buffer)
+          end
+        end
+
+        def cancel_pending(buffer)
+          pending_mutex.synchronize do
+            pending.delete(buffer)
+          end
+        end
+
+        def run_pending!
+          snapshot = pending_mutex.synchronize do
+            buffers = pending.dup
+            pending.clear
+            buffers
+          end
+          snapshot.each(&:flush_from_registry!)
+        end
+
+        def pending?
+          pending_mutex.synchronize { pending.any? }
         end
 
         def flush_all
+          run_pending!
           snapshot = registry_mutex.synchronize { registry.dup }
           snapshot.each(&:shutdown!)
         end
@@ -30,6 +59,14 @@ module Trifle
 
         def registry_mutex
           @registry_mutex ||= Mutex.new
+        end
+
+        def pending
+          @pending ||= []
+        end
+
+        def pending_mutex
+          @pending_mutex ||= Mutex.new
         end
 
         def install_shutdown_hooks
@@ -153,7 +190,7 @@ module Trifle
       end
     end
 
-    class Buffer
+    class Buffer # rubocop:disable Metrics/ClassLength
       DEFAULT_DURATION = 1
       DEFAULT_SIZE = 256
 
@@ -169,9 +206,17 @@ module Trifle
         def flush_all
           BufferRegistry.flush_all
         end
+
+        def run_pending!
+          BufferRegistry.run_pending!
+        end
+
+        def pending_flushes?
+          BufferRegistry.pending?
+        end
       end
 
-      def initialize(driver:, duration: DEFAULT_DURATION, size: DEFAULT_SIZE, aggregate: true, async: true)
+      def initialize(driver:, duration: DEFAULT_DURATION, size: DEFAULT_SIZE, aggregate: true, async: true) # rubocop:disable Metrics/MethodLength
         @driver = driver
         @duration = duration.to_f
         @size = size.to_i.positive? ? size.to_i : 1
@@ -179,6 +224,8 @@ module Trifle
         @queue = BufferQueue.new(aggregate: aggregate)
         @mutex = Mutex.new
         @stopped = false
+        @flush_pending = false
+        @pending_condition = ConditionVariable.new
         @worker = start_worker if async && @duration.positive?
         self.class.register(self)
       end
@@ -192,12 +239,8 @@ module Trifle
       end
 
       def flush!
-        actions = nil
-        @mutex.synchronize do
-          return if @queue.empty?
-
-          actions = @queue.drain
-        end
+        actions = drain_actions(reset_pending: true)
+        return if actions.nil?
 
         process(actions)
       end
@@ -207,8 +250,14 @@ module Trifle
 
         @shutdown = true
         stop_worker
+        BufferRegistry.cancel_pending(self)
         flush!
         self.class.unregister(self)
+      end
+
+      def flush_from_registry!
+        actions = drain_pending_actions
+        process(actions) if actions
       end
 
       private
@@ -221,6 +270,68 @@ module Trifle
         end
 
         flush! if should_flush
+      end
+
+      def request_async_flush
+        return unless mark_flush_pending
+
+        BufferRegistry.enqueue_pending(self)
+        wait_for_pending_flush
+      end
+
+      def mark_flush_pending
+        @mutex.synchronize do
+          return false if @queue.empty? || @flush_pending
+
+          @flush_pending = true
+          true
+        end
+      end
+
+      def drain_actions(reset_pending: false)
+        @mutex.synchronize do
+          return if @queue.empty?
+
+          mark_flush_serviced if reset_pending
+          @queue.drain
+        end
+      end
+
+      def drain_pending_actions
+        @mutex.synchronize do
+          return unless @flush_pending
+          return if @queue.empty?
+
+          mark_flush_serviced
+          @queue.drain
+        end
+      end
+
+      def wait_for_pending_flush # rubocop:disable Metrics/MethodLength
+        should_force = false
+        timeout = @duration.positive? ? @duration : DEFAULT_DURATION
+        @mutex.synchronize do
+          while @flush_pending && timeout.positive?
+            @pending_condition.wait(@mutex, timeout)
+            break unless @flush_pending
+
+            timeout = 0
+          end
+          should_force = @flush_pending
+        end
+
+        return unless should_force
+
+        BufferRegistry.cancel_pending(self)
+        flush!
+      end
+
+      def mark_flush_serviced
+        return unless @flush_pending
+
+        @flush_pending = false
+        BufferRegistry.cancel_pending(self)
+        @pending_condition.broadcast
       end
 
       def process(actions)
@@ -237,7 +348,7 @@ module Trifle
             break if @stopped
 
             sleep(@duration)
-            flush!
+            request_async_flush
           end
         end
       end
