@@ -9,20 +9,23 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :collection_name
 
-        def initialize(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil, system_tracking: true) # rubocop:disable Layout/LineLength
+        def initialize(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil, system_tracking: true) # rubocop:disable Layout/LineLength
           @client = client
           @collection_name = collection_name
-          @joined_identifier = joined_identifier
+          @joined_identifier = self.class.normalize_joined_identifier(joined_identifier)
           @expire_after = expire_after
           @system_tracking = system_tracking
           @separator = '::'
         end
 
-        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: true, expire_after: nil)
+        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil)
           collection = client[collection_name]
           collection.create
-          if joined_identifier
+          identifier_mode = normalize_joined_identifier(joined_identifier)
+          if identifier_mode == :full
             collection.indexes.create_one({ key: 1 }, unique: true)
+          elsif identifier_mode == :partial
+            collection.indexes.create_one({ key: 1, at: -1 }, unique: true)
           else
             collection.indexes.create_one({ key: 1, granularity: 1, at: -1 }, unique: true)
           end
@@ -30,16 +33,17 @@ module Trifle
         end
 
         def description
-          "#{self.class.name}(#{@joined_identifier ? 'J' : 'S'})"
+          mode = @joined_identifier == :full ? 'J' : @joined_identifier == :partial ? 'P' : 'S'
+          "#{self.class.name}(#{mode})"
         end
 
         def separator
-          @joined_identifier ? @separator : nil
+          @joined_identifier.nil? ? nil : @separator
         end
 
         def system_identifier_for(key:)
           key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
-          key.identifier(separator)
+          identifier_for(key)
         end
 
         def system_data_for(key:)
@@ -50,7 +54,7 @@ module Trifle
           data = self.class.pack(hash: { data: values })
 
           operations = keys.each_with_object([]) do |key, ops|
-            filter = key.identifier(separator)
+            filter = identifier_for(key)
             expire_at = @expire_after ? key.at + @expire_after : nil
 
             ops << upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
@@ -64,7 +68,7 @@ module Trifle
           data = self.class.pack(hash: { data: values })
 
           operations = keys.each_with_object([]) do |key, ops|
-            filter = key.identifier(separator)
+            filter = identifier_for(key)
             expire_at = @expire_after ? key.at + @expire_after : nil
 
             ops << upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
@@ -78,7 +82,7 @@ module Trifle
           return [] if @joined_identifier
 
           data = self.class.pack(hash: { data: values, at: key.at })
-          identifier = key.identifier(separator)
+          identifier = identifier_for(key)
           expire_at = @expire_after ? key.at + @expire_after : nil
 
           operations = [
@@ -102,13 +106,13 @@ module Trifle
         end
 
         def get(keys:) # rubocop:disable Metrics/AbcSize
-          combinations = keys.map { |key| key.identifier(separator) }
+          combinations = keys.map { |key| identifier_for(key) }
           data = collection.find('$or' => combinations)
           map = data.inject({}) do |o, d|
             o.merge(
               Nocturnal::Key.new(
                 key: d['key'], granularity: d['granularity'], at: d['at']
-              ).identifier(separator) => d['data']
+              ).identifier(separator, @joined_identifier) => d['data']
             )
           end
 
@@ -119,7 +123,7 @@ module Trifle
           return [] if @joined_identifier
 
           data = collection.find(
-            **key.identifier(separator)
+            **identifier_for(key)
           ).sort(at: -1).first # rubocop:disable Style/RedundantSort
           return [] if data.nil?
 
@@ -128,6 +132,18 @@ module Trifle
 
         private
 
+        def identifier_for(key)
+          key.identifier(separator, @joined_identifier)
+        end
+
+        def self.normalize_joined_identifier(value)
+          case value
+          when nil, :full, 'full', :partial, 'partial'
+            value.nil? ? nil : value.to_sym
+          else
+            raise ArgumentError, 'joined_identifier must be nil, :full, "full", :partial, or "partial"'
+          end
+        end
         def collection
           client[collection_name]
         end

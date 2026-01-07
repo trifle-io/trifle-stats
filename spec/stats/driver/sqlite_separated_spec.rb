@@ -3,12 +3,12 @@ require 'time'
 
 RSpec.describe Trifle::Stats::Driver::Sqlite do
   let(:sqlite_client) { SQLite3::Database.new(':memory:') }
-  let(:driver) { described_class.new(sqlite_client, table_name: 'test_stats_separated', joined_identifier: false) }
+  let(:driver) { described_class.new(sqlite_client, table_name: 'test_stats_separated', joined_identifier: nil) }
 
   before(:each) do
     sqlite_client.execute('DROP TABLE IF EXISTS test_stats_separated')
     sqlite_client.execute('DROP TABLE IF EXISTS test_stats_separated_ping')
-    described_class.setup!(sqlite_client, table_name: 'test_stats_separated', joined_identifier: false)
+    described_class.setup!(sqlite_client, table_name: 'test_stats_separated', joined_identifier: nil)
   end
 
   after(:each) do
@@ -17,7 +17,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
   describe '#initialize' do
     it 'sets client, table_name and separator' do
-      driver = described_class.new(sqlite_client, table_name: 'custom_stats', joined_identifier: false)
+      driver = described_class.new(sqlite_client, table_name: 'custom_stats', joined_identifier: nil)
       
       expect(driver.client).to eq(sqlite_client)
       expect(driver.table_name).to eq('custom_stats')
@@ -25,7 +25,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'uses default table_name when not provided' do
-      driver = described_class.new(sqlite_client, joined_identifier: false)
+      driver = described_class.new(sqlite_client, joined_identifier: nil)
       
       expect(driver.table_name).to eq('trifle_stats')
     end
@@ -43,7 +43,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'creates table with correct structure' do
-      described_class.setup!(sqlite_client, table_name: test_table, joined_identifier: false)
+      described_class.setup!(sqlite_client, table_name: test_table, joined_identifier: nil)
 
       result = sqlite_client.execute("PRAGMA table_info(#{test_table})")
       columns = result.map { |row| [row[1], row[2]] } # name, type
@@ -57,7 +57,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     end
 
     it 'creates unique composite index' do
-      described_class.setup!(sqlite_client, table_name: test_table, joined_identifier: false)
+      described_class.setup!(sqlite_client, table_name: test_table, joined_identifier: nil)
 
       result = sqlite_client.execute("PRAGMA index_list(#{test_table})")
       unique_indexes = result.select { |row| row[2] == 1 }

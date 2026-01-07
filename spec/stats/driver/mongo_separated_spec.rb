@@ -3,7 +3,7 @@ require 'mongo'
 RSpec.describe Trifle::Stats::Driver::Mongo do
   let(:mongo_url) { ENV['MONGODB_URL'] || 'mongodb://mongo:27017/trifle_stats_test' }
   let(:mongo_client) { Mongo::Client.new(mongo_url) }
-  let(:driver) { described_class.new(mongo_client, collection_name: 'test_stats_separated', joined_identifier: false) }
+  let(:driver) { described_class.new(mongo_client, collection_name: 'test_stats_separated', joined_identifier: nil) }
 
   before(:each) do
     # Ensure clean state - drop and recreate collection
@@ -12,7 +12,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     rescue Mongo::Error::OperationFailure
       # Collection doesn't exist, which is fine
     end
-    described_class.setup!(mongo_client, collection_name: 'test_stats_separated', joined_identifier: false)
+    described_class.setup!(mongo_client, collection_name: 'test_stats_separated', joined_identifier: nil)
   end
 
   after(:all) do
@@ -23,7 +23,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
 
   describe '#initialize' do
     it 'sets client, collection_name and separator' do
-      driver = described_class.new(mongo_client, collection_name: 'custom_stats', joined_identifier: false)
+      driver = described_class.new(mongo_client, collection_name: 'custom_stats', joined_identifier: nil)
       
       expect(driver.client).to eq(mongo_client)
       expect(driver.collection_name).to eq('custom_stats')
@@ -31,7 +31,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     end
 
     it 'uses default collection_name when not provided' do
-      driver = described_class.new(mongo_client, joined_identifier: false)
+      driver = described_class.new(mongo_client, joined_identifier: nil)
       
       expect(driver.collection_name).to eq('trifle_stats')
     end
@@ -45,7 +45,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
     end
 
     it 'creates collection with unique index on key, granularity, at' do
-      described_class.setup!(mongo_client, collection_name: test_collection, joined_identifier: false)
+      described_class.setup!(mongo_client, collection_name: test_collection, joined_identifier: nil)
 
       indexes = mongo_client[test_collection].indexes.to_a
       compound_index = indexes.find { |idx| idx['key'] == { 'key' => 1, 'granularity' => 1, 'at' => -1 } }

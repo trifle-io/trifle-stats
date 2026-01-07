@@ -19,10 +19,10 @@ module Performance
     def mongo_separated_config
       client = Mongo::Client.new('mongodb://mongo:27017/stats_separated')
       client[:trifle_stats].drop
-      Trifle::Stats::Driver::Mongo.setup!(client, joined_identifier: false)
+      Trifle::Stats::Driver::Mongo.setup!(client, joined_identifier: nil)
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = Trifle::Stats::Driver::Mongo.new(client, joined_identifier: false, system_tracking: true)
+        config.driver = Trifle::Stats::Driver::Mongo.new(client, joined_identifier: nil, system_tracking: true)
        config.buffer_enabled = false
       end
     end
@@ -56,10 +56,10 @@ module Performance
       client.exec('DROP DATABASE STATS_SEPARATED;') rescue ''
       client.exec('CREATE DATABASE STATS_SEPARATED;')
       client = PG.connect('postgresql://postgres:password@postgres:5432/stats_separated')
-      Trifle::Stats::Driver::Postgres.setup!(client, joined_identifier: false)
+      Trifle::Stats::Driver::Postgres.setup!(client, joined_identifier: nil)
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = Trifle::Stats::Driver::Postgres.new(client, joined_identifier: false, system_tracking: true)
+        config.driver = Trifle::Stats::Driver::Postgres.new(client, joined_identifier: nil, system_tracking: true)
         config.buffer_enabled = false
       end
     end
@@ -83,10 +83,10 @@ module Performance
 
     def sqlite_separated_config
       File.delete('stats_separated.db') if File.exist?('stats_separated.db')
-      Trifle::Stats::Driver::Sqlite.setup!(SQLite3::Database.new('stats_separated.db'), joined_identifier: false)
+      Trifle::Stats::Driver::Sqlite.setup!(SQLite3::Database.new('stats_separated.db'), joined_identifier: nil)
 
       Trifle::Stats::Configuration.new.tap do |config|
-        config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_separated.db'), joined_identifier: false, system_tracking: true)
+        config.driver = Trifle::Stats::Driver::Sqlite.new(SQLite3::Database.new('stats_separated.db'), joined_identifier: nil, system_tracking: true)
         config.buffer_enabled = false
       end
     end

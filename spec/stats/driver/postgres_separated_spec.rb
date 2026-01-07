@@ -3,12 +3,12 @@ require 'time'
 
 RSpec.describe Trifle::Stats::Driver::Postgres do
   let(:pg_client) { PG.connect(ENV.fetch('DATABASE_URL', 'postgresql://postgres:password@postgres:5432/postgres')) }
-  let(:driver) { described_class.new(pg_client, table_name: 'test_stats_separated', joined_identifier: false) }
+  let(:driver) { described_class.new(pg_client, table_name: 'test_stats_separated', joined_identifier: nil) }
 
   before(:each) do
     pg_client.exec('DROP TABLE IF EXISTS test_stats_separated')
     pg_client.exec('DROP TABLE IF EXISTS test_stats_separated_ping')
-    described_class.setup!(pg_client, table_name: 'test_stats_separated', joined_identifier: false)
+    described_class.setup!(pg_client, table_name: 'test_stats_separated', joined_identifier: nil)
   end
 
   after(:each) do
@@ -23,7 +23,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
 
   describe '#initialize' do
     it 'sets client, table_name and separator' do
-      driver = described_class.new(pg_client, table_name: 'custom_stats', joined_identifier: false)
+      driver = described_class.new(pg_client, table_name: 'custom_stats', joined_identifier: nil)
       
       expect(driver.client).to eq(pg_client)
       expect(driver.table_name).to eq('custom_stats')
@@ -31,7 +31,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     end
 
     it 'uses default table_name when not provided' do
-      driver = described_class.new(pg_client, joined_identifier: false)
+      driver = described_class.new(pg_client, joined_identifier: nil)
       
       expect(driver.table_name).to eq('trifle_stats')
     end
@@ -51,7 +51,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
     end
 
     it 'creates table with correct structure' do
-      described_class.setup!(pg_client, table_name: test_table, joined_identifier: false)
+      described_class.setup!(pg_client, table_name: test_table, joined_identifier: nil)
 
       result = pg_client.exec("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '#{test_table}' ORDER BY ordinal_position")
       columns = result.map { |row| [row['column_name'], row['data_type']] }

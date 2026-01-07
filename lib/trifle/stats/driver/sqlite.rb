@@ -10,21 +10,24 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :table_name, :ping_table_name
 
-        def initialize(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: true, ping_table_name: nil, system_tracking: true) # rubocop:disable Layout/LineLength
+        def initialize(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: :full, ping_table_name: nil, system_tracking: true) # rubocop:disable Layout/LineLength
           @client = client
           @table_name = table_name
           @ping_table_name = ping_table_name || "#{table_name}_ping"
-          @joined_identifier = joined_identifier
+          @joined_identifier = self.class.normalize_joined_identifier(joined_identifier)
           @system_tracking = system_tracking
           @separator = '::'
         end
 
-        def self.setup!(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: true, ping_table_name: nil) # rubocop:disable Layout/LineLength
+        def self.setup!(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: :full, ping_table_name: nil) # rubocop:disable Layout/LineLength
           ping_table_name ||= "#{table_name}_ping"
+          identifier_mode = normalize_joined_identifier(joined_identifier)
 
-          if joined_identifier
+          if identifier_mode == :full
             client.execute("CREATE TABLE #{table_name} (key varchar(255), data json);")
             client.execute("CREATE UNIQUE INDEX idx_#{table_name}_key ON #{table_name} (key);")
+          elsif identifier_mode == :partial
+            client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, at));") # rubocop:disable Layout/LineLength
           else
             client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, granularity varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, granularity, at));") # rubocop:disable Layout/LineLength
 
@@ -34,16 +37,17 @@ module Trifle
         end
 
         def description
-          "#{self.class.name}(#{@joined_identifier ? 'J' : 'S'})"
+          mode = @joined_identifier == :full ? 'J' : @joined_identifier == :partial ? 'P' : 'S'
+          "#{self.class.name}(#{mode})"
         end
 
         def separator
-          @joined_identifier ? @separator : nil
+          @joined_identifier.nil? ? nil : @separator
         end
 
         def system_identifier_for(key:)
           key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
-          key.identifier(separator)
+          identifier_for(key)
         end
 
         def system_data_for(key:)
@@ -54,7 +58,7 @@ module Trifle
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
-              identifier = key.identifier(separator)
+              identifier = identifier_for(key)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :inc)
               batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
@@ -78,7 +82,7 @@ module Trifle
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
-              identifier = key.identifier(separator)
+              identifier = identifier_for(key)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :set)
               batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
@@ -99,7 +103,7 @@ module Trifle
         end
 
         def get(keys:)
-          identifiers = keys.map { |key| key.identifier(separator) }
+          identifiers = keys.map { |key| identifier_for(key) }
           data = get_all(identifiers: identifiers)
           identifiers.map { |identifier| self.class.unpack(hash: data.fetch(identifier, {})) }
         end
@@ -190,12 +194,32 @@ module Trifle
         end
 
         def build_map_key(data)
-          @joined_identifier ? data[:key] : "#{data[:key]}::#{data[:granularity]}::#{data[:at]}"
+          return data[:key] if @joined_identifier == :full
+          return "#{data[:key]}::#{data[:at]}" if @joined_identifier == :partial
+
+          "#{data[:key]}::#{data[:granularity]}::#{data[:at]}"
         end
 
         def build_identifier_key(identifier)
-          @joined_identifier ? identifier[:key] : "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" # rubocop:disable Layout/LineLength
+          return identifier[:key] if @joined_identifier == :full
+          return "#{identifier[:key]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" if @joined_identifier == :partial
+
+          "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" # rubocop:disable Layout/LineLength
         end
+
+        def identifier_for(key)
+          key.identifier(separator, @joined_identifier)
+        end
+
+        def self.normalize_joined_identifier(value)
+          case value
+          when nil, :full, 'full', :partial, 'partial'
+            value.nil? ? nil : value.to_sym
+          else
+            raise ArgumentError, 'joined_identifier must be nil, :full, "full", :partial, or "partial"'
+          end
+        end
+
       end
     end
   end
