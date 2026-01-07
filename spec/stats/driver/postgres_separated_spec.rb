@@ -27,7 +27,7 @@ RSpec.describe Trifle::Stats::Driver::Postgres do
       
       expect(driver.client).to eq(pg_client)
       expect(driver.table_name).to eq('custom_stats')
-      expect(driver.separator).to be_nil
+      expect(driver.separator).to eq('::')
     end
 
     it 'uses default table_name when not provided' do

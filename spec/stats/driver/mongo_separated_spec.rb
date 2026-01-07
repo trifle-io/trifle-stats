@@ -27,7 +27,7 @@ RSpec.describe Trifle::Stats::Driver::Mongo do
       
       expect(driver.client).to eq(mongo_client)
       expect(driver.collection_name).to eq('custom_stats')
-      expect(driver.separator).to be_nil
+      expect(driver.separator).to eq('::')
     end
 
     it 'uses default collection_name when not provided' do

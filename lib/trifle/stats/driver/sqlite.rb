@@ -19,14 +19,15 @@ module Trifle
           @separator = '::'
         end
 
-        def self.setup!(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: :full, ping_table_name: nil) # rubocop:disable Layout/LineLength
+        def self.setup!(client = SQLite3::Database.new('stats.db'), table_name: 'trifle_stats', joined_identifier: :full, ping_table_name: nil) # rubocop:disable Layout/LineLength, Metrics/MethodLength
           ping_table_name ||= "#{table_name}_ping"
           identifier_mode = normalize_joined_identifier(joined_identifier)
 
-          if identifier_mode == :full
+          case identifier_mode
+          when :full
             client.execute("CREATE TABLE #{table_name} (key varchar(255), data json);")
             client.execute("CREATE UNIQUE INDEX idx_#{table_name}_key ON #{table_name} (key);")
-          elsif identifier_mode == :partial
+          when :partial
             client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, at));") # rubocop:disable Layout/LineLength
           else
             client.execute("CREATE TABLE #{table_name} (key varchar(255) NOT NULL, granularity varchar(255) NOT NULL, at datetime NOT NULL, data json, PRIMARY KEY (key, granularity, at));") # rubocop:disable Layout/LineLength
@@ -37,13 +38,15 @@ module Trifle
         end
 
         def description
-          mode = @joined_identifier == :full ? 'J' : @joined_identifier == :partial ? 'P' : 'S'
+          mode = if @joined_identifier == :full
+                   'J'
+                 else
+                   @joined_identifier == :partial ? 'P' : 'S'
+                 end
           "#{self.class.name}(#{mode})"
         end
 
-        def separator
-          @joined_identifier.nil? ? nil : @separator
-        end
+        attr_reader :separator
 
         def system_identifier_for(key:)
           key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
@@ -166,6 +169,15 @@ module Trifle
           SQL
         end
 
+        def self.normalize_joined_identifier(value)
+          case value
+          when nil, :full, 'full', :partial, 'partial'
+            value.nil? ? nil : value.to_sym
+          else
+            raise ArgumentError, 'joined_identifier must be nil, :full, "full", :partial, or "partial"'
+          end
+        end
+
         private
 
         # Batch data operations to avoid SQLite parser stack overflow
@@ -202,24 +214,16 @@ module Trifle
 
         def build_identifier_key(identifier)
           return identifier[:key] if @joined_identifier == :full
-          return "#{identifier[:key]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" if @joined_identifier == :partial
+          if @joined_identifier == :partial
+            return "#{identifier[:key]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}"
+          end
 
-          "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}" # rubocop:disable Layout/LineLength
+          "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}"
         end
 
         def identifier_for(key)
           key.identifier(separator, @joined_identifier)
         end
-
-        def self.normalize_joined_identifier(value)
-          case value
-          when nil, :full, 'full', :partial, 'partial'
-            value.nil? ? nil : value.to_sym
-          else
-            raise ArgumentError, 'joined_identifier must be nil, :full, "full", :partial, or "partial"'
-          end
-        end
-
       end
     end
   end

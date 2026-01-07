@@ -5,7 +5,7 @@ require_relative '../mixins/packer'
 module Trifle
   module Stats
     module Driver
-      class Mongo
+      class Mongo # rubocop:disable Metrics/ClassLength
         include Mixins::Packer
         attr_accessor :client, :collection_name
 
@@ -18,13 +18,14 @@ module Trifle
           @separator = '::'
         end
 
-        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil)
+        def self.setup!(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil) # rubocop:disable Metrics/MethodLength
           collection = client[collection_name]
           collection.create
           identifier_mode = normalize_joined_identifier(joined_identifier)
-          if identifier_mode == :full
+          case identifier_mode
+          when :full
             collection.indexes.create_one({ key: 1 }, unique: true)
-          elsif identifier_mode == :partial
+          when :partial
             collection.indexes.create_one({ key: 1, at: -1 }, unique: true)
           else
             collection.indexes.create_one({ key: 1, granularity: 1, at: -1 }, unique: true)
@@ -33,13 +34,15 @@ module Trifle
         end
 
         def description
-          mode = @joined_identifier == :full ? 'J' : @joined_identifier == :partial ? 'P' : 'S'
+          mode = if @joined_identifier == :full
+                   'J'
+                 else
+                   @joined_identifier == :partial ? 'P' : 'S'
+                 end
           "#{self.class.name}(#{mode})"
         end
 
-        def separator
-          @joined_identifier.nil? ? nil : @separator
-        end
+        attr_reader :separator
 
         def system_identifier_for(key:)
           key = Nocturnal::Key.new(key: '__system__key__', granularity: key.granularity, at: key.at)
@@ -130,12 +133,6 @@ module Trifle
           [data['at'], data['data']]
         end
 
-        private
-
-        def identifier_for(key)
-          key.identifier(separator, @joined_identifier)
-        end
-
         def self.normalize_joined_identifier(value)
           case value
           when nil, :full, 'full', :partial, 'partial'
@@ -144,6 +141,13 @@ module Trifle
             raise ArgumentError, 'joined_identifier must be nil, :full, "full", :partial, or "partial"'
           end
         end
+
+        private
+
+        def identifier_for(key)
+          key.identifier(separator, @joined_identifier)
+        end
+
         def collection
           client[collection_name]
         end
