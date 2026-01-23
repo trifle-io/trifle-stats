@@ -136,15 +136,16 @@ module Trifle
       end
 
       def store_linear(operation, keys, values)
-        @actions << { operation: operation, keys: keys, values: duplicate(values) }
+        @actions << { operation: operation, keys: keys, values: duplicate(values), count: 1 }
       end
 
       def store_aggregate(operation, keys, values)
         signature = signature_for(operation, keys)
         if (entry = @actions[signature])
           entry[:values] = merge_values(operation, entry[:values], values)
+          entry[:count] += 1
         else
-          @actions[signature] = { operation: operation, keys: keys, values: duplicate(values) }
+          @actions[signature] = { operation: operation, keys: keys, values: duplicate(values), count: 1 }
         end
       end
 
@@ -336,7 +337,9 @@ module Trifle
 
       def process(actions)
         actions.each do |action|
-          @driver.public_send(action[:operation], keys: action[:keys], values: action[:values])
+          @driver.public_send(
+            action[:operation], keys: action[:keys], values: action[:values], count: action[:count] || 1
+          )
         end
       ensure
         release_active_record_connection

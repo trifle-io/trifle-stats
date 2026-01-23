@@ -35,7 +35,8 @@ RSpec.describe Trifle::Stats::Buffer do
 
       expect(driver).to receive(:inc).with(
         keys: [key],
-        values: { count: 3, nested: { requests: 4 } }
+        values: { count: 3, nested: { requests: 4 } },
+        count: 2
       )
 
       buffer.inc(keys: [key], values: { count: 1, nested: { requests: 1 } })
@@ -49,7 +50,8 @@ RSpec.describe Trifle::Stats::Buffer do
 
       expect(driver).to receive(:set).with(
         keys: [key],
-        values: { state: 'done', detail: { attempts: 3 } }
+        values: { state: 'done', detail: { attempts: 3 } },
+        count: 2
       )
 
       buffer.set(keys: [key], values: { state: 'processing' })
@@ -91,7 +93,7 @@ RSpec.describe Trifle::Stats::Buffer do
     it 'flushes outstanding operations when shutting down' do
       buffer = described_class.new(driver: driver, duration: 60, size: 10, aggregate: false, async: false)
 
-      expect(driver).to receive(:inc).with(keys: [key], values: { count: 5 })
+      expect(driver).to receive(:inc).with(keys: [key], values: { count: 5 }, count: 1)
       buffer.inc(keys: [key], values: { count: 5 })
 
       buffer.shutdown!

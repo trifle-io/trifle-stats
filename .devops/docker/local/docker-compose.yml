@@ -12,7 +12,7 @@ services:
   app:
     command: /bin/sh -c "while sleep 1000; do :; done"
     build:
-      context: ../../..
+      context: .
       dockerfile: .devops/docker/local/Dockerfile
     depends_on:
       - postgres
@@ -26,5 +26,5 @@ services:
     expose:
       - 4000
     volumes:
-      - ../../..:/workspaces/stats
-    working_dir: /workspaces/stats
+      - ..:/workspaces
+    working_dir: /workspaces/trifle-stats

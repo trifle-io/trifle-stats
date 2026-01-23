@@ -53,18 +53,18 @@ module Trifle
           identifier_for(key)
         end
 
-        def system_data_for(key:)
-          self.class.pack(hash: { count: 1, keys: { key.key => 1 } })
+        def system_data_for(key:, count: 1)
+          self.class.pack(hash: { count: count, keys: { key.key => count } })
         end
 
-        def inc(keys:, values:)
+        def inc(keys:, values:, count: 1)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
               identifier = identifier_for(key)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :inc)
-              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
+              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
             end
           end
         end
@@ -81,14 +81,14 @@ module Trifle
           SQL
         end
 
-        def set(keys:, values:)
+        def set(keys:, values:, count: 1)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
               identifier = identifier_for(key)
               # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :set)
-              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
+              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
             end
           end
         end

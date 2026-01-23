@@ -16,7 +16,7 @@ module Trifle
           "#{self.class.name}(J)"
         end
 
-        def inc(keys:, values:)
+        def inc(keys:, values:, count: 1) # rubocop:disable Lint/UnusedMethodArgument
           keys.map do |key|
             self.class.pack(hash: values).each do |k, c|
               d = @data.fetch(key.join(@separator), {})
@@ -26,7 +26,7 @@ module Trifle
           end
         end
 
-        def set(keys:, values:)
+        def set(keys:, values:, count: 1) # rubocop:disable Lint/UnusedMethodArgument
           keys.map do |key|
             self.class.pack(hash: values).each do |k, c|
               d = @data.fetch(key.join(@separator), {})

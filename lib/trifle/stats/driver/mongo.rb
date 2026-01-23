@@ -9,12 +9,13 @@ module Trifle
         include Mixins::Packer
         attr_accessor :client, :collection_name
 
-        def initialize(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil, system_tracking: true) # rubocop:disable Layout/LineLength
+        def initialize(client, collection_name: 'trifle_stats', joined_identifier: :full, expire_after: nil, system_tracking: true, bulk_write: true) # rubocop:disable Layout/LineLength, Metrics/ParameterLists
           @client = client
           @collection_name = collection_name
           @joined_identifier = self.class.normalize_joined_identifier(joined_identifier)
           @expire_after = expire_after
           @system_tracking = system_tracking
+          @bulk_write = bulk_write
           @separator = '::'
         end
 
@@ -49,63 +50,93 @@ module Trifle
           identifier_for(key)
         end
 
-        def system_data_for(key:)
-          self.class.pack(hash: { data: { count: 1, keys: { key.key => 1 } } })
+        def system_data_for(key:, count: 1)
+          self.class.pack(hash: { data: { count: count, keys: { key.key => count } } })
         end
 
-        def inc(keys:, values:)
+        def inc(keys:, values:, count: 1) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
           data = self.class.pack(hash: { data: values })
 
-          operations = keys.each_with_object([]) do |key, ops|
-            filter = identifier_for(key)
-            expire_at = @expire_after ? key.at + @expire_after : nil
+          if @bulk_write
+            operations = keys.each_with_object([]) do |key, ops|
+              filter = identifier_for(key)
+              expire_at = @expire_after ? key.at + @expire_after : nil
 
-            ops << upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
-            ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+              ops << upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
+              ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key, count: count), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+            end
+
+            collection.bulk_write(operations)
+          else
+            keys.each do |key|
+              filter = identifier_for(key)
+              expire_at = @expire_after ? key.at + @expire_after : nil
+              update = build_update('$inc', data: data, expire_at: expire_at)
+
+              collection.update_many(filter, update, upsert: true)
+              collection.update_many(system_identifier_for(key: key), build_update('$inc', data: system_data_for(key: key, count: count), expire_at: expire_at), upsert: true) if @system_tracking # rubocop:disable Layout/LineLength
+            end
           end
-
-          collection.bulk_write(operations)
         end
 
-        def set(keys:, values:)
+        def set(keys:, values:, count: 1) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
           data = self.class.pack(hash: { data: values })
 
-          operations = keys.each_with_object([]) do |key, ops|
-            filter = identifier_for(key)
-            expire_at = @expire_after ? key.at + @expire_after : nil
+          if @bulk_write
+            operations = keys.each_with_object([]) do |key, ops|
+              filter = identifier_for(key)
+              expire_at = @expire_after ? key.at + @expire_after : nil
 
-            ops << upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
-            ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+              ops << upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
+              ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key, count: count), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+            end
+
+            collection.bulk_write(operations)
+          else
+            keys.each do |key|
+              filter = identifier_for(key)
+              expire_at = @expire_after ? key.at + @expire_after : nil
+              update = build_update('$set', data: data, expire_at: expire_at)
+
+              collection.update_many(filter, update, upsert: true)
+              collection.update_many(system_identifier_for(key: key), build_update('$inc', data: system_data_for(key: key, count: count), expire_at: expire_at), upsert: true) if @system_tracking # rubocop:disable Layout/LineLength
+            end
           end
-
-          collection.bulk_write(operations)
         end
 
-        def ping(key:, values:)
+        def ping(key:, values:) # rubocop:disable Metrics/MethodLength
           return [] if @joined_identifier
 
           data = self.class.pack(hash: { data: values, at: key.at })
           identifier = identifier_for(key)
           expire_at = @expire_after ? key.at + @expire_after : nil
 
-          operations = [
-            upsert_operation('$set', filter: identifier.slice(:key), data: data, expire_at: expire_at)
-          ]
+          if @bulk_write
+            operations = [
+              upsert_operation('$set', filter: identifier.slice(:key), data: data, expire_at: expire_at)
+            ]
 
-          collection.bulk_write(operations)
+            collection.bulk_write(operations)
+          else
+            update = build_update('$set', data: data, expire_at: expire_at)
+            collection.update_many(identifier.slice(:key), update, upsert: true)
+          end
         end
 
         def upsert_operation(operation, filter:, data:, expire_at: nil)
+          update = build_update(operation, data: data, expire_at: expire_at)
+          { update_many: { filter: filter, update: update, upsert: true } }
+        end
+
+        def build_update(operation, data:, expire_at: nil)
           # Merge if $set and $set
           update_data = operation == '$set' && expire_at ? data.merge(expire_at: expire_at) : data
 
           # Add if $inc and $set
-          update = {
+          {
             operation => update_data,
             **(operation != '$set' && expire_at ? { '$set' => { expire_at: expire_at } } : {})
           }
-
-          { update_many: { filter: filter, update: update, upsert: true } }
         end
 
         def get(keys:) # rubocop:disable Metrics/AbcSize
