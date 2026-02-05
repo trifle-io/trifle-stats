@@ -50,11 +50,12 @@ module Trifle
           identifier_for(key)
         end
 
-        def system_data_for(key:, count: 1)
-          self.class.pack(hash: { data: { count: count, keys: { key.key => count } } })
+        def system_data_for(key:, count: 1, tracking_key: nil)
+          tracking_key ||= key.key
+          self.class.pack(hash: { data: { count: count, keys: { tracking_key => count } } })
         end
 
-        def inc(keys:, values:, count: 1) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+        def inc(keys:, values:, count: 1, tracking_key: nil) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
           data = self.class.pack(hash: { data: values })
 
           if @bulk_write
@@ -63,7 +64,14 @@ module Trifle
               expire_at = @expire_after ? key.at + @expire_after : nil
 
               ops << upsert_operation('$inc', filter: filter, data: data, expire_at: expire_at)
-              ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key, count: count), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+              next unless @system_tracking
+
+              ops << upsert_operation(
+                '$inc',
+                filter: system_identifier_for(key: key),
+                data: system_data_for(key: key, count: count, tracking_key: tracking_key),
+                expire_at: expire_at
+              )
             end
 
             collection.bulk_write(operations)
@@ -74,12 +82,19 @@ module Trifle
               update = build_update('$inc', data: data, expire_at: expire_at)
 
               collection.update_many(filter, update, upsert: true)
-              collection.update_many(system_identifier_for(key: key), build_update('$inc', data: system_data_for(key: key, count: count), expire_at: expire_at), upsert: true) if @system_tracking # rubocop:disable Layout/LineLength
+              next unless @system_tracking
+
+              system_update = build_update(
+                '$inc',
+                data: system_data_for(key: key, count: count, tracking_key: tracking_key),
+                expire_at: expire_at
+              )
+              collection.update_many(system_identifier_for(key: key), system_update, upsert: true)
             end
           end
         end
 
-        def set(keys:, values:, count: 1) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+        def set(keys:, values:, count: 1, tracking_key: nil) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
           data = self.class.pack(hash: { data: values })
 
           if @bulk_write
@@ -88,7 +103,14 @@ module Trifle
               expire_at = @expire_after ? key.at + @expire_after : nil
 
               ops << upsert_operation('$set', filter: filter, data: data, expire_at: expire_at)
-              ops << upsert_operation('$inc', filter: system_identifier_for(key: key), data: system_data_for(key: key, count: count), expire_at: expire_at) if @system_tracking # rubocop:disable Layout/LineLength
+              next unless @system_tracking
+
+              ops << upsert_operation(
+                '$inc',
+                filter: system_identifier_for(key: key),
+                data: system_data_for(key: key, count: count, tracking_key: tracking_key),
+                expire_at: expire_at
+              )
             end
 
             collection.bulk_write(operations)
@@ -99,7 +121,14 @@ module Trifle
               update = build_update('$set', data: data, expire_at: expire_at)
 
               collection.update_many(filter, update, upsert: true)
-              collection.update_many(system_identifier_for(key: key), build_update('$inc', data: system_data_for(key: key, count: count), expire_at: expire_at), upsert: true) if @system_tracking # rubocop:disable Layout/LineLength
+              next unless @system_tracking
+
+              system_update = build_update(
+                '$inc',
+                data: system_data_for(key: key, count: count, tracking_key: tracking_key),
+                expire_at: expire_at
+              )
+              collection.update_many(system_identifier_for(key: key), system_update, upsert: true)
             end
           end
         end

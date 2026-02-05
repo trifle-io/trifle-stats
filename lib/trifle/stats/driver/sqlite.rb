@@ -53,18 +53,18 @@ module Trifle
           identifier_for(key)
         end
 
-        def system_data_for(key:, count: 1)
-          self.class.pack(hash: { count: count, keys: { key.key => count } })
+        def system_data_for(key:, count: 1, tracking_key: nil)
+          tracking_key ||= key.key
+          self.class.pack(hash: { count: count, keys: { tracking_key => count } })
         end
 
-        def inc(keys:, values:, count: 1)
+        def inc(keys:, values:, count: 1, tracking_key: nil)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
               identifier = identifier_for(key)
-              # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :inc)
-              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
+              track_system_data(c, key, count, tracking_key)
             end
           end
         end
@@ -81,16 +81,26 @@ module Trifle
           SQL
         end
 
-        def set(keys:, values:, count: 1)
+        def set(keys:, values:, count: 1, tracking_key: nil)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.each do |key|
               identifier = identifier_for(key)
-              # Batch data operations to avoid SQLite parser stack overflow
               batch_data_operations(identifier: identifier, data: data, connection: c, operation: :set)
-              batch_data_operations(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count), connection: c, operation: :inc) if @system_tracking # rubocop:disable Layout/LineLength
+              track_system_data(c, key, count, tracking_key)
             end
           end
+        end
+
+        def track_system_data(connection, key, count, tracking_key)
+          return unless @system_tracking
+
+          batch_data_operations(
+            identifier: system_identifier_for(key: key),
+            data: system_data_for(key: key, count: count, tracking_key: tracking_key),
+            connection: connection,
+            operation: :inc
+          )
         end
 
         def set_query(identifier:, data:)

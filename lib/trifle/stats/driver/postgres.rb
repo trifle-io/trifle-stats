@@ -51,17 +51,18 @@ module Trifle
           identifier_for(key)
         end
 
-        def system_data_for(key:, count: 1)
-          self.class.pack(hash: { count: count, keys: { key.key => count } })
+        def system_data_for(key:, count: 1, tracking_key: nil)
+          tracking_key ||= key.key
+          self.class.pack(hash: { count: count, keys: { tracking_key => count } })
         end
 
-        def inc(keys:, values:, count: 1)
+        def inc(keys:, values:, count: 1, tracking_key: nil)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.map do |key|
               identifier = identifier_for(key)
               c.exec(inc_query(identifier: identifier, data: data))
-              c.exec(inc_query(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count))) if @system_tracking # rubocop:disable Layout/LineLength
+              track_system_data(c, key, count, tracking_key)
             end
           end
         end
@@ -78,15 +79,24 @@ module Trifle
           SQL
         end
 
-        def set(keys:, values:, count: 1)
+        def set(keys:, values:, count: 1, tracking_key: nil)
           data = self.class.pack(hash: values)
           client.transaction do |c|
             keys.map do |key|
               identifier = identifier_for(key)
               c.exec(set_query(identifier: identifier, data: data))
-              c.exec(inc_query(identifier: system_identifier_for(key: key), data: system_data_for(key: key, count: count))) if @system_tracking # rubocop:disable Layout/LineLength
+              track_system_data(c, key, count, tracking_key)
             end
           end
+        end
+
+        def track_system_data(connection, key, count, tracking_key)
+          return unless @system_tracking
+
+          system_data = system_data_for(key: key, count: count, tracking_key: tracking_key)
+          connection.exec(
+            inc_query(identifier: system_identifier_for(key: key), data: system_data)
+          )
         end
 
         def set_query(identifier:, data:)

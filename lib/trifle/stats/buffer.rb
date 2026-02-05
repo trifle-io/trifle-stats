@@ -105,8 +105,12 @@ module Trifle
         reset!
       end
 
-      def store(operation, keys, values)
-        aggregate? ? store_aggregate(operation, keys, values) : store_linear(operation, keys, values)
+      def store(operation, keys, values, tracking_key)
+        if aggregate?
+          store_aggregate(operation, keys, values, tracking_key)
+        else
+          store_linear(operation, keys, values, tracking_key)
+        end
         @operation_count += 1
       end
 
@@ -135,17 +139,17 @@ module Trifle
         @operation_count = 0
       end
 
-      def store_linear(operation, keys, values)
-        @actions << { operation: operation, keys: keys, values: duplicate(values), count: 1 }
+      def store_linear(operation, keys, values, tracking_key)
+        @actions << build_action(operation, keys, values, tracking_key)
       end
 
-      def store_aggregate(operation, keys, values)
-        signature = signature_for(operation, keys)
+      def store_aggregate(operation, keys, values, tracking_key)
+        signature = signature_for(operation, keys, tracking_key)
         if (entry = @actions[signature])
           entry[:values] = merge_values(operation, entry[:values], values)
           entry[:count] += 1
         else
-          @actions[signature] = { operation: operation, keys: keys, values: duplicate(values), count: 1 }
+          @actions[signature] = build_action(operation, keys, values, tracking_key)
         end
       end
 
@@ -172,11 +176,22 @@ module Trifle
         current
       end
 
-      def signature_for(operation, keys)
+      def signature_for(operation, keys, tracking_key)
+        tracking_marker = tracking_key || '__tracked__'
         identifiers = keys.map do |key|
           [key.prefix, key.key, key.granularity, key.at&.to_i].join(':')
         end
-        "#{operation}-#{identifiers.join('|')}"
+        "#{operation}-#{tracking_marker}-#{identifiers.join('|')}"
+      end
+
+      def build_action(operation, keys, values, tracking_key)
+        {
+          operation: operation,
+          keys: keys,
+          values: duplicate(values),
+          count: 1,
+          tracking_key: tracking_key
+        }
       end
 
       def duplicate(value)
@@ -231,12 +246,12 @@ module Trifle
         self.class.register(self)
       end
 
-      def inc(keys:, values:)
-        enqueue(:inc, keys: keys, values: values)
+      def inc(keys:, values:, tracking_key: nil)
+        enqueue(:inc, keys: keys, values: values, tracking_key: tracking_key)
       end
 
-      def set(keys:, values:)
-        enqueue(:set, keys: keys, values: values)
+      def set(keys:, values:, tracking_key: nil)
+        enqueue(:set, keys: keys, values: values, tracking_key: tracking_key)
       end
 
       def flush!
@@ -263,10 +278,10 @@ module Trifle
 
       private
 
-      def enqueue(operation, keys:, values:)
+      def enqueue(operation, keys:, values:, tracking_key:)
         should_flush = false
         @mutex.synchronize do
-          @queue.store(operation, keys, values)
+          @queue.store(operation, keys, values, tracking_key)
           should_flush = @queue.size >= @size
         end
 
@@ -336,13 +351,27 @@ module Trifle
       end
 
       def process(actions)
-        actions.each do |action|
-          @driver.public_send(
-            action[:operation], keys: action[:keys], values: action[:values], count: action[:count] || 1
-          )
-        end
+        actions.each { |action| dispatch_action(action) }
       ensure
         release_active_record_connection
+      end
+
+      def dispatch_action(action)
+        payload = action_payload(action)
+
+        if action[:tracking_key]
+          @driver.public_send(action[:operation], **payload.merge(tracking_key: action[:tracking_key]))
+        else
+          @driver.public_send(action[:operation], **payload)
+        end
+      end
+
+      def action_payload(action)
+        {
+          keys: action[:keys],
+          values: action[:values],
+          count: action[:count] || 1
+        }
       end
 
       def start_worker

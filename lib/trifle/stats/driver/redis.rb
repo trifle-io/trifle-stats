@@ -26,11 +26,12 @@ module Trifle
           key.join(separator)
         end
 
-        def system_data_for(key:, count: 1)
-          self.class.pack(hash: { count: count, keys: { key.key => count } })
+        def system_data_for(key:, count: 1, tracking_key: nil)
+          tracking_key ||= key.key
+          self.class.pack(hash: { count: count, keys: { tracking_key => count } })
         end
 
-        def inc(keys:, values:, count: 1) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def inc(keys:, values:, count: 1, tracking_key: nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           keys.map do |key|
             key.prefix = prefix
             pkey = key.join(separator)
@@ -41,13 +42,13 @@ module Trifle
             next unless @system_tracking
 
             skey = system_join_for(key: key)
-            system_data_for(key: key, count: count).each do |k, c|
+            system_data_for(key: key, count: count, tracking_key: tracking_key).each do |k, c|
               client.hincrby(skey, k, c)
             end
           end
         end
 
-        def set(keys:, values:, count: 1)
+        def set(keys:, values:, count: 1, tracking_key: nil)
           keys.map do |key|
             key.prefix = prefix
             pkey = key.join(separator)
@@ -56,7 +57,7 @@ module Trifle
             next unless @system_tracking
 
             skey = system_join_for(key: key)
-            system_data_for(key: key, count: count).each do |k, c|
+            system_data_for(key: key, count: count, tracking_key: tracking_key).each do |k, c|
               client.hincrby(skey, k, c)
             end
           end

@@ -12,6 +12,7 @@ module Trifle
             @at = keywords.fetch(:at)
             @values = keywords.fetch(:values)
             @config = keywords[:config]
+            @untracked = keywords.fetch(:untracked, false)
           end
 
           def config
@@ -25,10 +26,20 @@ module Trifle
           end
 
           def perform
-            config.storage.set(
+            payload = {
               keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
               values: values
-            )
+            }
+
+            if tracking_key
+              config.storage.set(**payload.merge(tracking_key: tracking_key))
+            else
+              config.storage.set(**payload)
+            end
+          end
+
+          def tracking_key
+            @untracked ? '__untracked__' : nil
           end
         end
       end

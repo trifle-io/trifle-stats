@@ -54,21 +54,23 @@ module Trifle
       default
     end
 
-    def self.track(key:, at:, values:, config: nil)
+    def self.track(key:, at:, values:, config: nil, untracked: false)
       Trifle::Stats::Operations::Timeseries::Increment.new(
         key: key,
         at: at,
         values: values,
-        config: config
+        config: config,
+        untracked: untracked
       ).perform
     end
 
-    def self.assert(key:, at:, values:, config: nil)
+    def self.assert(key:, at:, values:, config: nil, untracked: false)
       Trifle::Stats::Operations::Timeseries::Set.new(
         key: key,
         at: at,
         values: values,
-        config: config
+        config: config,
+        untracked: untracked
       ).perform
     end
 
