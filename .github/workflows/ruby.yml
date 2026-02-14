@@ -42,6 +42,19 @@ jobs:
         ports:
           - 6379:6379
 
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: trifle_stats_test
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -ppassword"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 3306:3306
+
       mongodb:
         image: mongo:6.0
         env:
@@ -64,6 +77,11 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
       REDIS_URL: redis://localhost:6379/0
       MONGODB_URL: mongodb://root:password@localhost:27017/test_db?authSource=admin
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: trifle_stats_test
 
     steps:
       - uses: actions/checkout@v4
@@ -94,6 +112,12 @@ jobs:
             sleep 2
           done
 
+          # Wait for MySQL
+          until timeout 1 bash -c "</dev/tcp/localhost/3306"; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
       - name: Setup Database
         run: |
           # Create database if needed (adjust based on your setup)
@@ -107,6 +131,11 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379/0
           MONGODB_URL: mongodb://root:password@localhost:27017/test_db?authSource=admin
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: trifle_stats_test
 
       - name: Rubocop
         run: bundle exec rubocop

@@ -3,7 +3,7 @@
 [![Gem Version](https://badge.fury.io/rb/trifle-stats.svg)](https://rubygems.org/gems/trifle-stats)
 [![Ruby](https://github.com/trifle-io/trifle-stats/workflows/Ruby/badge.svg?branch=main)](https://github.com/trifle-io/trifle-stats)
 
-Simple analytics backed by Redis, Postgres, MongoDB, Google Analytics, Segment, or whatever. It gets you from having bunch of events occuring within few minutes to being able to say what happened on 25th January 2021.
+Simple analytics backed by Redis, Postgres, MySQL, MongoDB, Google Analytics, Segment, or whatever. It gets you from having bunch of events occuring within few minutes to being able to say what happened on 25th January 2021.
 
 ## Documentation
 
@@ -61,6 +61,7 @@ Trifle::Stats supports multiple backends:
 
 - **Redis** - Fast, in-memory storage
 - **Postgres** - SQL database with JSONB support
+- **MySQL** - SQL database with JSON support
 - **SQLite** - SQL database in a file
 - **MongoDB** - Document database
 - **Process** - Thread-safe in-memory storage (development/testing)
@@ -110,7 +111,7 @@ Tests are run against all supported drivers. To run the test suite:
 $ bundle exec rspec
 ```
 
-Ensure Redis, Postgres, and MongoDB are running locally. The test suite will handle database setup automatically.
+Ensure Redis, Postgres, MySQL, and MongoDB are running locally. The test suite will handle database setup automatically.
 
 Tests are meant to be **simple and isolated**. Every test should be **independent** and able to run in any order. Tests should be **self-contained** and set up their own configuration. This makes it easier to debug and maintain the test suite.
 
