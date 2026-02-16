@@ -94,7 +94,7 @@ Set `buffer_enabled = false` for synchronous write-through.
 
 ## Documentation
 
-Full guides, API reference, and examples at **[trifle.io/trifle-stats-rb](https://trifle.io/trifle-stats-rb)**
+Full guides, API reference, and examples at **[docs.trifle.io/trifle-stats-rb](https://docs.trifle.io/trifle-stats-rb)**
 
 ## Trifle Ecosystem
 
