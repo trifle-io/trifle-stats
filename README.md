@@ -3,15 +3,15 @@
 [![Gem Version](https://badge.fury.io/rb/trifle-stats.svg)](https://rubygems.org/gems/trifle-stats)
 [![Ruby](https://github.com/trifle-io/trifle-stats/workflows/Ruby/badge.svg?branch=main)](https://github.com/trifle-io/trifle-stats)
 
-Time-series metrics for Ruby. Track anything — signups, revenue, job durations — using the database you already have. No InfluxDB. No TimescaleDB. Just one call and your existing Postgres, Redis, MongoDB, MySQL, or SQLite.
+Time-series metrics for Ruby. Track anything (signups, revenue, job durations) using the database you already have. No InfluxDB. No TimescaleDB. Just one call and your existing Postgres, Redis, MongoDB, MySQL, or SQLite.
 
 Part of the [Trifle](https://trifle.io) ecosystem. Also available in [Elixir](https://github.com/trifle-io/trifle_stats) and [Go](https://github.com/trifle-io/trifle_stats_go).
 
 ## Why Trifle::Stats?
 
-- **No new infrastructure** — Uses your existing database. No dedicated time-series DB to deploy, maintain, or pay for.
-- **One call, many dimensions** — Track nested breakdowns (revenue by country by channel) in a single `track` call. Automatic rollup across configurable time granularities.
-- **Library-first** — Start with the gem. Add [Trifle App](https://trifle.io/product-app) dashboards, [Trifle CLI](https://github.com/trifle-io/trifle-cli) terminal access, or AI agent integration via MCP when you need them.
+- **No new infrastructure.** Uses your existing database. No dedicated time-series DB to deploy, maintain, or pay for.
+- **One call, many dimensions.** Track nested breakdowns (revenue by country by channel) in a single `track` call. Automatic rollup across dynamic time granularities (`1m`, `6h`, `1d`, etc.).
+- **Library-first.** Start with the gem. Add [Trifle App](https://trifle.io/product/app) dashboards, [Trifle CLI](https://github.com/trifle-io/trifle-cli) terminal access, or AI agent integration via MCP when you need them.
 
 ## Quick Start
 
@@ -71,11 +71,11 @@ Trifle::Stats.values(
 
 ## Features
 
-- **Multiple time granularities** — minute, hour, day, week, month, quarter, year
-- **Nested value hierarchies** — Track dimensional breakdowns in a single call
-- **Series operations** — Aggregators (sum, avg, min, max), transponders, formatters
-- **Buffered writes** — Queue metrics in-memory before flushing to reduce write load
-- **Driver flexibility** — Switch backends without changing application code
+- **Dynamic time granularities.** Use any interval like `1m`, `10m`, `1h`, `6h`, `1d`, `1w`, `1mo`, `1q`, `1y`.
+- **Nested value hierarchies.** Track dimensional breakdowns in a single call.
+- **Series operations.** Aggregators (sum, avg, min, max), transponders, formatters.
+- **Buffered writes.** Queue metrics in-memory before flushing to reduce write load.
+- **Driver flexibility.** Switch backends without changing application code.
 
 ## Buffered Persistence
 
@@ -102,7 +102,7 @@ Trifle::Stats is the tracking layer. The ecosystem grows with you:
 
 | Component | What it does |
 |-----------|-------------|
-| **[Trifle App](https://trifle.io/product-app)** | Dashboards, alerts, scheduled reports, AI-powered chat. Cloud or self-hosted. |
+| **[Trifle App](https://trifle.io/product/app)** | Dashboards, alerts, scheduled reports, AI-powered chat. Cloud or self-hosted. |
 | **[Trifle CLI](https://github.com/trifle-io/trifle-cli)** | Query and push metrics from the terminal. MCP server mode for AI agents. |
 | **[Trifle::Stats (Elixir)](https://github.com/trifle-io/trifle_stats)** | Elixir implementation with the same API and storage format. |
 | **[Trifle Stats (Go)](https://github.com/trifle-io/trifle_stats_go)** | Go implementation with the same API and storage format. |
