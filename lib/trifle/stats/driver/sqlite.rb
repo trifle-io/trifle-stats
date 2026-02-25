@@ -206,18 +206,10 @@ module Trifle
         end
 
         def format_value(value)
-          case value
-          when String
-            "'#{value}'"
-          when Time
-            "'#{format_time_value(value)}'"
-          when DateTime
-            "'#{format_time_value(value)}'"
-          when Integer, Float
-            value.to_s
-          else
-            "'#{value}'"
-          end
+          return "'#{format_time_value(value)}'" if value.is_a?(Time) || value.is_a?(DateTime)
+          return value.to_s if value.is_a?(Integer) || value.is_a?(Float)
+
+          "'#{value}'"
         end
 
         def format_time_value(value)
@@ -242,9 +234,7 @@ module Trifle
 
         def build_identifier_key(identifier)
           return identifier[:key] if @joined_identifier == :full
-          if @joined_identifier == :partial
-            return "#{identifier[:key]}::#{format_time_value(identifier[:at])}"
-          end
+          return "#{identifier[:key]}::#{format_time_value(identifier[:at])}" if @joined_identifier == :partial
 
           "#{identifier[:key]}::#{identifier[:granularity]}::#{format_time_value(identifier[:at])}"
         end
