@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'time'
 require_relative '../mixins/packer'
 
 module Trifle
@@ -126,7 +127,7 @@ module Trifle
           sample = identifiers.first
 
           results.each_with_object(Hash.new({})) do |r, o|
-            identifier = sample.each_with_index.to_h { |(k, _), i| [k, k == :at ? Time.parse(r[i]) : r[i]] }
+            identifier = sample.each_with_index.to_h { |(k, _), i| [k, k == :at ? Time.iso8601(r[i]) : r[i]] }
 
             o[identifier] = JSON.parse(r.last)
           rescue JSON::ParserError
@@ -155,9 +156,11 @@ module Trifle
         end
 
         def ping_query(key:, at:, data:)
+          at_formatted = format_time_value(at)
+
           <<-SQL
-            INSERT INTO #{ping_table_name} (key, at, data) VALUES ('#{key}', '#{at.strftime('%Y-%m-%d %H:%M:%S')}', json('#{data.to_json}'))
-            ON CONFLICT (key) DO UPDATE SET at = '#{at.strftime('%Y-%m-%d %H:%M:%S')}', data = json('#{data.to_json}');
+            INSERT INTO #{ping_table_name} (key, at, data) VALUES ('#{key}', '#{at_formatted}', json('#{data.to_json}'))
+            ON CONFLICT (key) DO UPDATE SET at = '#{at_formatted}', data = json('#{data.to_json}');
           SQL
         end
 
@@ -168,7 +171,7 @@ module Trifle
           return [] if result.nil?
 
           # SQLite returns columns in order: key, at, data
-          [Time.parse(result[1]), self.class.unpack(hash: JSON.parse(result[2]))]
+          [Time.iso8601(result[1]), self.class.unpack(hash: JSON.parse(result[2]))]
         rescue JSON::ParserError
           []
         end
@@ -207,11 +210,26 @@ module Trifle
           when String
             "'#{value}'"
           when Time
-            "'#{value.strftime('%Y-%m-%d %H:%M:%S')}'"
+            "'#{format_time_value(value)}'"
+          when DateTime
+            "'#{format_time_value(value)}'"
           when Integer, Float
             value.to_s
           else
             "'#{value}'"
+          end
+        end
+
+        def format_time_value(value)
+          case value
+          when Time
+            value.getutc.iso8601
+          when DateTime
+            value.to_time.getutc.iso8601
+          when Integer
+            Time.at(value).getutc.iso8601
+          else
+            Time.iso8601(value.to_s).getutc.iso8601
           end
         end
 
@@ -225,10 +243,10 @@ module Trifle
         def build_identifier_key(identifier)
           return identifier[:key] if @joined_identifier == :full
           if @joined_identifier == :partial
-            return "#{identifier[:key]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}"
+            return "#{identifier[:key]}::#{format_time_value(identifier[:at])}"
           end
 
-          "#{identifier[:key]}::#{identifier[:granularity]}::#{identifier[:at].strftime('%Y-%m-%d %H:%M:%S')}"
+          "#{identifier[:key]}::#{identifier[:granularity]}::#{format_time_value(identifier[:at])}"
         end
 
         def identifier_for(key)

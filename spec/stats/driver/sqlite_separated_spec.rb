@@ -78,8 +78,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     it 'increments values for each key' do
       driver.inc(keys: keys, values: values)
 
-      key1_at = keys[0].at.strftime('%Y-%m-%d %H:%M:%S')
-      key2_at = keys[1].at.strftime('%Y-%m-%d %H:%M:%S')
+      key1_at = keys[0].at.getutc.iso8601
+      key2_at = keys[1].at.getutc.iso8601
       result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
       result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
@@ -89,7 +89,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
     it 'increments existing values' do
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
-      key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
+      key_at = key.at.getutc.iso8601
       sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 10}'))")
       
       driver.inc(keys: [key], values: { count: 5 })
@@ -102,7 +102,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
       nested_values = { stats: { requests: 10, errors: 2 } }
       
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
-      key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
+      key_at = key.at.getutc.iso8601
       driver.inc(keys: [key], values: nested_values)
 
       result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
@@ -125,8 +125,8 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
     it 'sets values for each key' do
       driver.set(keys: keys, values: values)
 
-      key1_at = keys[0].at.strftime('%Y-%m-%d %H:%M:%S')
-      key2_at = keys[1].at.strftime('%Y-%m-%d %H:%M:%S')
+      key1_at = keys[0].at.getutc.iso8601
+      key2_at = keys[1].at.getutc.iso8601
       result1 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key1_at}'").first
       result2 = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key2_at}'").first
 
@@ -136,7 +136,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
     it 'overwrites existing values' do
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
-      key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
+      key_at = key.at.getutc.iso8601
       sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', json('{\"count\": 100}'))")
       
       driver.set(keys: [key], values: { count: 10 })
@@ -149,7 +149,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
       nested_values = { config: { enabled: true, limit: 50 } }
       
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
-      key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
+      key_at = key.at.getutc.iso8601
       driver.set(keys: [key], values: nested_values)
 
       result = sqlite_client.execute("SELECT data FROM test_stats_separated WHERE key = 'metric' AND granularity = '2023' AND at = '#{key_at}'").first
@@ -217,7 +217,7 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
     it 'handles invalid JSON gracefully' do
       key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
-      key_at = key.at.strftime('%Y-%m-%d %H:%M:%S')
+      key_at = key.at.getutc.iso8601
       sqlite_client.execute("INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '#{key_at}', 'invalid_json')")
 
       result = driver.get(keys: [key])
