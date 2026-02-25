@@ -23,7 +23,13 @@ module Trifle
           def timeline
             @timeline ||= begin
               pgrn = Nocturnal::Parser.new(granularity)
-              Nocturnal.timeline(from: @from, to: @to, offset: pgrn.offset, unit: pgrn.unit)
+              Nocturnal.timeline(
+                from: localized_time(@from),
+                to: localized_time(@to),
+                offset: pgrn.offset,
+                unit: pgrn.unit,
+                config: config
+              )
             end
           end
 
@@ -53,6 +59,13 @@ module Trifle
 
           def perform
             @skip_blanks ? clean_values : values
+          end
+
+          private
+
+          def localized_time(time)
+            base_time = time.is_a?(Time) ? time : time.to_time
+            config.tz.utc_to_local(base_time.getutc)
           end
         end
       end

@@ -2,9 +2,15 @@ require 'time'
 
 RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
   let(:mock_driver) { instance_double(Trifle::Stats::Driver::Process) }
+  let(:mock_tz) do
+    instance_double(TZInfo::Timezone).tap do |tz|
+      allow(tz).to receive(:utc_to_local) { |time| time }
+    end
+  end
   let(:mock_config) do
     instance_double(Trifle::Stats::Configuration).tap do |config|
       allow(config).to receive(:driver).and_return(mock_driver)
+      allow(config).to receive(:tz).and_return(mock_tz)
     end
   end
   let(:from_time) { Time.parse('2023-01-15 10:00:00 UTC') }
@@ -69,7 +75,8 @@ RSpec.describe Trifle::Stats::Operations::Timeseries::Values do
         from: from_time,
         to: to_time,
         offset: 1,
-        unit: :hour
+        unit: :hour,
+        config: mock_config
       ).and_return(expected_timeline)
 
       result = operation.timeline

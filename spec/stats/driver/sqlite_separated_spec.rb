@@ -224,6 +224,18 @@ RSpec.describe Trifle::Stats::Driver::Sqlite do
 
       expect(result).to eq([{}])
     end
+
+    it 'matches zero-microsecond RFC3339 timestamps with optional fractional suffix' do
+      key = Trifle::Stats::Nocturnal::Key.new(key: 'metric', granularity: '2023', at: Time.parse('2023-01-01'))
+
+      sqlite_client.execute(
+        "INSERT INTO test_stats_separated (key, granularity, at, data) VALUES ('metric', '2023', '2023-01-01T00:00:00.000000Z', json('{\"count\": 10}'))"
+      )
+
+      result = driver.get(keys: [key])
+
+      expect(result).to eq([{ 'count' => 10 }])
+    end
   end
 
   describe '#scan' do

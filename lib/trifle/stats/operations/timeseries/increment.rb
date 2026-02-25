@@ -21,7 +21,7 @@ module Trifle
 
           def key_for(granularity:)
             pgrn = Nocturnal::Parser.new(granularity)
-            at = Nocturnal.new(@at, config: config).floor(pgrn.offset, pgrn.unit)
+            at = Nocturnal.new(localized_time(@at), config: config).floor(pgrn.offset, pgrn.unit)
             Nocturnal::Key.new(key: key, granularity: granularity, at: at)
           end
 
@@ -40,6 +40,13 @@ module Trifle
 
           def tracking_key
             @untracked ? '__untracked__' : nil
+          end
+
+          private
+
+          def localized_time(time)
+            base_time = time.is_a?(Time) ? time : time.to_time
+            config.tz.utc_to_local(base_time.getutc)
           end
         end
       end

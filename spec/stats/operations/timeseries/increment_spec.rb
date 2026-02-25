@@ -2,7 +2,11 @@ require 'time'
 
 RSpec.describe Trifle::Stats::Operations::Timeseries::Increment do
   let(:mock_driver) { instance_double(Trifle::Stats::Driver::Process) }
-  let(:mock_tz) { instance_double(TZInfo::Timezone, utc_offset: 0) }
+  let(:mock_tz) do
+    instance_double(TZInfo::Timezone, utc_offset: 0).tap do |tz|
+      allow(tz).to receive(:utc_to_local) { |time| time }
+    end
+  end
   let(:mock_config) do
     instance_double(Trifle::Stats::Configuration).tap do |config|
       allow(config).to receive(:driver).and_return(mock_driver)

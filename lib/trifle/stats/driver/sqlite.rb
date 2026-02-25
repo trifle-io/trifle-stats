@@ -137,7 +137,7 @@ module Trifle
 
         def get_query(identifiers:)
           conditions = identifiers.map do |identifier|
-            identifier.map { |k, v| "#{k} = #{format_value(v)}" }.join(' AND ')
+            identifier.map { |k, v| build_field_condition(k, v) }.join(' AND ')
           end.join(' OR ')
 
           <<-SQL
@@ -193,6 +193,15 @@ module Trifle
 
         private
 
+        def build_field_condition(key, value)
+          return "#{key} = #{format_value(value)}" unless key == :at
+
+          formatted = format_time_value(value)
+          with_microseconds = formatted.sub('Z', '.000000Z')
+
+          "(at = '#{formatted}' OR at = '#{with_microseconds}')"
+        end
+
         # Batch data operations to avoid SQLite parser stack overflow
         # Splits large data hashes into smaller chunks to prevent too many nested json_set calls
         def batch_data_operations(identifier:, data:, connection:, operation:)
@@ -215,13 +224,13 @@ module Trifle
         def format_time_value(value)
           case value
           when Time
-            value.getutc.iso8601
+            value.getutc.iso8601(0)
           when DateTime
-            value.to_time.getutc.iso8601
+            value.to_time.getutc.iso8601(0)
           when Integer
-            Time.at(value).getutc.iso8601
+            Time.at(value).getutc.iso8601(0)
           else
-            Time.iso8601(value.to_s).getutc.iso8601
+            Time.iso8601(value.to_s).getutc.iso8601(0)
           end
         end
 
