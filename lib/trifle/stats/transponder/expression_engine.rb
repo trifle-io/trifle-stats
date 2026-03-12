@@ -7,6 +7,9 @@ module Trifle
     class Transponder
       class ExpressionEngine
         LETTERS = ('a'..'z').to_a.freeze
+        TOKEN_OPERATORS = %w[+ - * / ( ) ,].freeze
+        NUMBER_PATTERN = /\A\d+(?:\.\d+)?/.freeze
+        IDENT_PATTERN = /\A[A-Za-z_][A-Za-z0-9_]*/.freeze
 
         class << self
           def max_vars
@@ -56,48 +59,69 @@ module Trifle
           end
 
           def tokenize(expression)
-            trimmed = expression.to_s.strip
-            raise ArgumentError, 'Expression must be text.' if trimmed.empty?
-
+            trimmed = normalize_expression_text(expression)
             tokens = []
             index = 0
 
             while index < trimmed.length
-              char = trimmed[index]
-
-              if char.match?(/\s/)
-                index += 1
-                next
-              end
-
-              if %w[+ - * / ( ) ,].include?(char)
-                tokens << char
-                index += 1
-                next
-              end
-
-              if char.match?(/\d/)
-                match = trimmed[index..].match(/\A\d+(?:\.\d+)?/)
-                raise ArgumentError, "Invalid token at position #{index}." unless match
-
-                tokens << [:number, BigDecimal(match[0])]
-                index += match[0].length
-                next
-              end
-
-              if char.match?(/[A-Za-z_]/)
-                match = trimmed[index..].match(/\A[A-Za-z_][A-Za-z0-9_]*/)
-                raise ArgumentError, "Invalid token at position #{index}." unless match
-
-                tokens << [:ident, match[0]]
-                index += match[0].length
-                next
-              end
-
-              raise ArgumentError, "Invalid token at position #{index}."
+              token, consumed = read_token(trimmed, index)
+              tokens << token unless token.nil?
+              index += consumed
             end
 
             tokens
+          end
+
+          def normalize_expression_text(expression)
+            trimmed = expression.to_s.strip
+            raise ArgumentError, 'Expression must be text.' if trimmed.empty?
+
+            trimmed
+          end
+
+          def read_token(source, index)
+            char = source[index]
+
+            return [nil, 1] if whitespace?(char)
+            return [char, 1] if operator?(char)
+            return number_token(source, index) if digit?(char)
+            return ident_token(source, index) if identifier_start?(char)
+
+            raise_invalid_token(index)
+          end
+
+          def whitespace?(char)
+            char.match?(/\s/)
+          end
+
+          def operator?(char)
+            TOKEN_OPERATORS.include?(char)
+          end
+
+          def digit?(char)
+            char.match?(/\d/)
+          end
+
+          def identifier_start?(char)
+            char.match?(/[A-Za-z_]/)
+          end
+
+          def number_token(source, index)
+            match = source[index..].match(NUMBER_PATTERN)
+            raise_invalid_token(index) unless match
+
+            [[:number, BigDecimal(match[0])], match[0].length]
+          end
+
+          def ident_token(source, index)
+            match = source[index..].match(IDENT_PATTERN)
+            raise_invalid_token(index) unless match
+
+            [[:ident, match[0]], match[0].length]
+          end
+
+          def raise_invalid_token(index)
+            raise ArgumentError, "Invalid token at position #{index}."
           end
         end
 
@@ -141,51 +165,18 @@ module Trifle
           end
 
           def parse_factor
-            case current
-            when '+'
-              consume
-              parse_factor
-            when '-'
-              consume
-              [:neg, parse_factor]
-            when '('
-              consume
-              node = parse_expression
-              raise ArgumentError, 'Missing closing parenthesis.' unless current == ')'
+            return parse_unary_factor if %w[+ -].include?(current)
+            return parse_grouped_expression if current == '('
 
-              consume
-              node
-            else
-              parse_primary
-            end
+            parse_primary
           end
 
           def parse_primary
             token = current
             raise ArgumentError, 'Unexpected end of expression.' if token.nil?
 
-            if token.is_a?(Array) && token[0] == :number
-              consume
-              return [:number, token[1]]
-            end
-
-            if token.is_a?(Array) && token[0] == :ident
-              consume
-              ident = token[1]
-
-              if current == '('
-                consume
-                args = parse_args
-                raise ArgumentError, 'Missing closing parenthesis.' unless current == ')'
-
-                consume
-                return [:func, ident, args]
-              end
-
-              raise ArgumentError, "Unknown variable #{ident}." unless @vars.include?(ident)
-
-              return [:var, ident]
-            end
+            return parse_number(token) if number_token?(token)
+            return parse_identifier(token) if ident_token?(token)
 
             raise ArgumentError, "Unexpected token #{token.inspect}."
           end
@@ -212,31 +203,92 @@ module Trifle
             @index += 1
             token
           end
+
+          def parse_unary_factor
+            operator = consume
+            node = parse_factor
+            operator == '-' ? [:neg, node] : node
+          end
+
+          def parse_grouped_expression
+            consume
+            node = parse_expression
+            expect_token!(')', 'Missing closing parenthesis.')
+            consume
+            node
+          end
+
+          def parse_number(token)
+            consume
+            [:number, token[1]]
+          end
+
+          def parse_identifier(token)
+            consume
+            ident = token[1]
+            return parse_function_call(ident) if current == '('
+
+            validate_variable!(ident)
+            [:var, ident]
+          end
+
+          def parse_function_call(ident)
+            consume
+            args = parse_args
+            expect_token!(')', 'Missing closing parenthesis.')
+            consume
+            [:func, ident, args]
+          end
+
+          def validate_variable!(ident)
+            raise ArgumentError, "Unknown variable #{ident}." unless @vars.include?(ident)
+          end
+
+          def number_token?(token)
+            token.is_a?(Array) && token[0] == :number
+          end
+
+          def ident_token?(token)
+            token.is_a?(Array) && token[0] == :ident
+          end
+
+          def expect_token!(expected, message)
+            raise ArgumentError, message unless current == expected
+          end
         end
 
         class Evaluator
+          ZERO = BigDecimal('0')
+          AVERAGE = lambda do |args|
+            args.reduce(ZERO, :+) / BigDecimal(args.length.to_s)
+          end
+          BINARY_OPERATIONS = {
+            :+ => ->(left, right) { left + right },
+            :- => ->(left, right) { left - right },
+            :* => ->(left, right) { left * right },
+            :/ => ->(left, right) { right.zero? ? nil : left / right }
+          }.freeze
+          FUNCTIONS = {
+            'sum' => ->(args) { args.reduce(ZERO, :+) },
+            'mean' => AVERAGE,
+            'avg' => AVERAGE,
+            'min' => :min.to_proc,
+            'max' => :max.to_proc
+          }.freeze
+
           def initialize(env)
             @env = env || {}
           end
 
           def evaluate(node)
             type, *rest = node
+            return rest[0] if type == :number
+            return evaluate_variable(rest[0]) if type == :var
+            return evaluate_negation(rest[0]) if type == :neg
+            return evaluate_binary(type, rest[0], rest[1]) if BINARY_OPERATIONS.key?(type)
+            return evaluate_function(rest[0], rest[1]) if type == :func
 
-            case type
-            when :number
-              rest[0]
-            when :var
-              normalize_value(@env[rest[0]])
-            when :neg
-              value = evaluate(rest[0])
-              value.nil? ? nil : (-value)
-            when :+, :-, :*, :/
-              apply_binary(type, evaluate(rest[0]), evaluate(rest[1]))
-            when :func
-              apply_function(rest[0], rest[1].map { |arg| evaluate(arg) })
-            else
-              raise ArgumentError, "Unknown AST node #{type.inspect}."
-            end
+            raise ArgumentError, "Unknown AST node #{type.inspect}."
           end
 
           private
@@ -251,46 +303,51 @@ module Trifle
             nil
           end
 
-          def apply_binary(op, left, right)
+          def evaluate_variable(name)
+            normalize_value(@env[name])
+          end
+
+          def evaluate_negation(node)
+            value = evaluate(node)
+            value.nil? ? nil : -value
+          end
+
+          def evaluate_binary(operator, left_node, right_node)
+            left = evaluate(left_node)
+            right = evaluate(right_node)
+            apply_binary(operator, left, right)
+          end
+
+          def evaluate_function(name, arg_nodes)
+            args = arg_nodes.map { |arg| evaluate(arg) }
+            apply_function(name, args)
+          end
+
+          def apply_binary(operator, left, right)
             return nil if left.nil? || right.nil?
 
-            case op
-            when :+
-              left + right
-            when :-
-              left - right
-            when :*
-              left * right
-            when :/
-              return nil if right.zero?
+            operation = BINARY_OPERATIONS[operator]
+            raise ArgumentError, "Unknown binary operator #{operator.inspect}." unless operation
 
-              left / right
-            else
-              raise ArgumentError, "Unknown binary operator #{op.inspect}."
-            end
+            operation.call(left, right)
           end
 
           def apply_function(name, args)
             return nil if args.empty? || args.any?(&:nil?)
 
-            case name
-            when 'sum'
-              args.reduce(BigDecimal('0'), :+)
-            when 'mean', 'avg'
-              args.reduce(BigDecimal('0'), :+) / BigDecimal(args.length.to_s)
-            when 'min'
-              args.min
-            when 'max'
-              args.max
-            when 'sqrt'
-              raise ArgumentError, 'Function sqrt expects 1 argument.' unless args.length == 1
+            return apply_sqrt(args) if name == 'sqrt'
 
-              return nil if args[0].negative?
+            function = FUNCTIONS[name]
+            raise ArgumentError, "Unknown function #{name}." unless function
 
-              BigDecimal(Math.sqrt(args[0].to_f).to_s)
-            else
-              raise ArgumentError, "Unknown function #{name}."
-            end
+            function.call(args)
+          end
+
+          def apply_sqrt(args)
+            raise ArgumentError, 'Function sqrt expects 1 argument.' unless args.length == 1
+            return nil if args[0].negative?
+
+            BigDecimal(Math.sqrt(args[0].to_f).to_s)
           end
         end
       end

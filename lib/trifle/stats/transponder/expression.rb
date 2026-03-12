@@ -8,33 +8,26 @@ module Trifle
         Trifle::Stats::Series.register_transponder(:expression, self)
 
         def transpond(series:, paths:, expression:, response:)
-          normalized_paths = normalize_paths(paths)
-          normalized_response = response.to_s.strip
-
-          ensure_response!(normalized_response)
-          ensure_no_wildcards!(normalized_paths, normalized_response)
-
+          normalized_paths, normalized_response = normalized_config(paths, response)
           ast = ExpressionEngine.parse(expression: expression, paths: normalized_paths)
-
-          series[:values] = series[:values].map do |data|
-            env = build_env(data, normalized_paths)
-            value = ExpressionEngine.evaluate(ast: ast, env: env)
-            put_response(data, normalized_response, value)
-          end
-
+          series[:values] = transformed_values(series[:values], normalized_paths, normalized_response, ast)
           series
         end
 
         def validate(paths:, expression:, response:)
-          normalized_paths = normalize_paths(paths)
-          normalized_response = response.to_s.strip
-
-          ensure_response!(normalized_response)
-          ensure_no_wildcards!(normalized_paths, normalized_response)
+          normalized_paths, = normalized_config(paths, response)
           ExpressionEngine.validate(paths: normalized_paths, expression: expression)
         end
 
         private
+
+        def normalized_config(paths, response)
+          normalized_paths = normalize_paths(paths)
+          normalized_response = normalize_response(response)
+
+          ensure_no_wildcards!(normalized_paths, normalized_response)
+          [normalized_paths, normalized_response]
+        end
 
         def normalize_paths(paths)
           raise ArgumentError, 'Paths must be an array.' unless paths.is_a?(Array)
@@ -43,6 +36,12 @@ module Trifle
           raise ArgumentError, 'At least one path is required.' if cleaned.empty?
 
           cleaned
+        end
+
+        def normalize_response(response)
+          normalized_response = response.to_s.strip
+          ensure_response!(normalized_response)
+          normalized_response
         end
 
         def ensure_response!(response)
@@ -58,6 +57,16 @@ module Trifle
           ExpressionEngine.allowed_vars(paths.length).zip(paths).to_h do |var, path|
             [var, data.dig(*path.split('.'))]
           end
+        end
+
+        def transformed_values(values, paths, response, ast)
+          values.map { |data| transform_row(data, paths, response, ast) }
+        end
+
+        def transform_row(data, paths, response, ast)
+          env = build_env(data, paths)
+          value = ExpressionEngine.evaluate(ast: ast, env: env)
+          put_response(data, response, value)
         end
 
         def put_response(data, response, value)
@@ -95,7 +104,7 @@ module Trifle
         def deep_dup(value)
           case value
           when Hash
-            value.each_with_object({}) { |(key, inner), out| out[key] = deep_dup(inner) }
+            value.transform_values { |inner| deep_dup(inner) }
           when Array
             value.map { |inner| deep_dup(inner) }
           else
