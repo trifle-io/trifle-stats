@@ -251,30 +251,23 @@ module Trifle
             nil
           end
 
-          def apply_binary(_op, nil, _right)
-            nil
-          end
+          def apply_binary(op, left, right)
+            return nil if left.nil? || right.nil?
 
-          def apply_binary(_op, _left, nil)
-            nil
-          end
+            case op
+            when :+
+              left + right
+            when :-
+              left - right
+            when :*
+              left * right
+            when :/
+              return nil if right.zero?
 
-          def apply_binary(:+, left, right)
-            left + right
-          end
-
-          def apply_binary(:-, left, right)
-            left - right
-          end
-
-          def apply_binary(:*, left, right)
-            left * right
-          end
-
-          def apply_binary(:/, _left, right)
-            return nil if right.zero?
-
-            _left / right
+              left / right
+            else
+              raise ArgumentError, "Unknown binary operator #{op.inspect}."
+            end
           end
 
           def apply_function(name, args)
