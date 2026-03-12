@@ -57,6 +57,25 @@ Trifle::Stats.values(
 #=> { at: [Mon, Tue, Wed, ...], values: [{ "count" => 12, "revenue" => 598_80, ... }, ...] }
 ```
 
+### 5. Process with Series
+
+```ruby
+series = Trifle::Stats.series(
+  key: 'orders',
+  from: 1.week.ago,
+  to: Time.now,
+  granularity: :day
+)
+
+series.transpond.expression(
+  paths: ['revenue', 'count'],
+  expression: 'a / b',
+  response: 'avg_order'
+)
+
+series.aggregate.sum(path: 'count')
+```
+
 ## Drivers
 
 | Driver | Backend | Best for |
@@ -73,7 +92,7 @@ Trifle::Stats.values(
 
 - **Dynamic time granularities.** Use any interval like `1m`, `10m`, `1h`, `6h`, `1d`, `1w`, `1mo`, `1q`, `1y`.
 - **Nested value hierarchies.** Track dimensional breakdowns in a single call.
-- **Series operations.** Aggregators (sum, avg, min, max), transponders, formatters.
+- **Series operations.** Aggregators, the expression transponder, and formatters.
 - **Buffered writes.** Queue metrics in-memory before flushing to reduce write load.
 - **Driver flexibility.** Switch backends without changing application code.
 
