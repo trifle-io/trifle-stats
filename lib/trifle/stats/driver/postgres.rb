@@ -61,22 +61,26 @@ module Trifle
           client.transaction do |c|
             keys.map do |key|
               identifier = identifier_for(key)
-              c.exec(inc_query(identifier: identifier, data: data))
+              query, params = inc_query(identifier: identifier, data: data)
+              c.exec_params(query, params)
               track_system_data(c, key, count, tracking_key)
             end
           end
         end
 
-        def inc_query(identifier:, data:)
+        def inc_query(identifier:, data:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           columns = identifier.keys.join(', ')
-          values = identifier.values.map { |v| format_value(v) }.join(', ')
-          conflict_columns = identifier.keys.join(', ')
+          placeholders = identifier.each_with_index.map { |_, i| "$#{i + 1}" }.join(', ')
+          expression = data.inject("to_jsonb(#{table_name}.data)") do |o, (k, v)|
+            path = escape_string(k.to_s)
+            "jsonb_set(#{o}, '{#{path}}', (COALESCE(#{table_name}.data->>'#{path}', '0')::numeric + #{numeric_value(k, v)})::text::jsonb)" # rubocop:disable Layout/LineLength
+          end
 
-          <<-SQL
-            INSERT INTO #{table_name} (#{columns}, data) VALUES (#{values}, '#{data.to_json}')
-            ON CONFLICT (#{conflict_columns}) DO UPDATE SET data =
-            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', (COALESCE(#{table_name}.data->>'#{k}', '0')::int + #{v})::text::jsonb)" }};
+          query = <<-SQL
+            INSERT INTO #{table_name} (#{columns}, data) VALUES (#{placeholders}, $#{identifier.size + 1})
+            ON CONFLICT (#{columns}) DO UPDATE SET data = #{expression};
           SQL
+          [query, query_params(identifier) + [data.to_json]]
         end
 
         def set(keys:, values:, count: 1, tracking_key: nil)
@@ -84,7 +88,8 @@ module Trifle
           client.transaction do |c|
             keys.map do |key|
               identifier = identifier_for(key)
-              c.exec(set_query(identifier: identifier, data: data))
+              query, params = set_query(identifier: identifier, data: data)
+              c.exec_params(query, params)
               track_system_data(c, key, count, tracking_key)
             end
           end
@@ -94,21 +99,24 @@ module Trifle
           return unless @system_tracking
 
           system_data = system_data_for(key: key, count: count, tracking_key: tracking_key)
-          connection.exec(
-            inc_query(identifier: system_identifier_for(key: key), data: system_data)
-          )
+          query, params = inc_query(identifier: system_identifier_for(key: key), data: system_data)
+          connection.exec_params(query, params)
         end
 
-        def set_query(identifier:, data:)
+        def set_query(identifier:, data:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           columns = identifier.keys.join(', ')
-          values = identifier.values.map { |v| format_value(v) }.join(', ')
-          conflict_columns = identifier.keys.join(', ')
+          placeholders = identifier.each_with_index.map { |_, i| "$#{i + 1}" }.join(', ')
+          params = query_params(identifier) + [data.to_json]
+          expression = data.inject("to_jsonb(#{table_name}.data)") do |o, (k, v)|
+            params << v.to_json
+            "jsonb_set(#{o}, '{#{escape_string(k.to_s)}}', $#{params.size}::jsonb)"
+          end
 
-          <<-SQL
-            INSERT INTO #{table_name} (#{columns}, data) VALUES (#{values}, '#{data.to_json}')
-            ON CONFLICT (#{conflict_columns}) DO UPDATE SET data =
-            #{data.inject("to_jsonb(#{table_name}.data)") { |o, (k, v)| "jsonb_set(#{o}, '{#{k}}', '#{v.to_json}'::jsonb)" }}
+          query = <<-SQL
+            INSERT INTO #{table_name} (#{columns}, data) VALUES (#{placeholders}, $#{identifier.size + 1})
+            ON CONFLICT (#{columns}) DO UPDATE SET data = #{expression}
           SQL
+          [query, params]
         end
 
         def get(keys:)
@@ -118,7 +126,8 @@ module Trifle
         end
 
         def get_all(identifiers:) # rubocop:disable Metrics/AbcSize
-          results = client.exec_params(get_query(identifiers: identifiers)).to_a
+          query, params = get_query(identifiers: identifiers)
+          results = client.exec_params(query, params).to_a
           sample = identifiers.first
 
           results.each_with_object(Hash.new({})) do |r, o|
@@ -130,37 +139,44 @@ module Trifle
           end
         end
 
-        def get_query(identifiers:)
+        def get_query(identifiers:) # rubocop:disable Metrics/MethodLength
+          params = []
           conditions = identifiers.map do |identifier|
-            identifier.map { |k, v| "#{k} = #{format_value(v)}" }.join(' AND ')
+            identifier.map do |k, v|
+              params << query_param(v)
+              "#{k} = $#{params.size}"
+            end.join(' AND ')
           end.join(' OR ')
 
-          <<-SQL
+          query = <<-SQL
             SELECT * FROM #{table_name} WHERE #{conditions};
           SQL
+          [query, params]
         end
 
         def ping(key:, values:)
           return [] if @joined_identifier
 
           data = self.class.pack(hash: { data: values, at: key.at })
-          operation = ping_query(key: key.key, at: key.at, data: data)
+          query, params = ping_query(key: key.key, at: key.at, data: data)
           client.transaction do |c|
-            c.exec(operation)
+            c.exec_params(query, params)
           end
         end
 
         def ping_query(key:, at:, data:)
-          <<-SQL
-            INSERT INTO #{ping_table_name} (key, at, data) VALUES ('#{key}', '#{at.iso8601}', '#{data.to_json}')
-            ON CONFLICT (key) DO UPDATE SET at = '#{at.iso8601}', data = '#{data.to_json}'::jsonb;
+          query = <<-SQL
+            INSERT INTO #{ping_table_name} (key, at, data) VALUES ($1, $2, $3)
+            ON CONFLICT (key) DO UPDATE SET at = $2, data = $3::jsonb;
           SQL
+          [query, [key.to_s, at.iso8601, data.to_json]]
         end
 
         def scan(key:)
           return [] if @joined_identifier
 
-          result = client.exec_params(scan_query(key: key.key)).to_a.first
+          query, params = scan_query(key: key.key)
+          result = client.exec_params(query, params).to_a.first
           return [] if result.nil?
 
           [Time.parse(result['at']), self.class.unpack(hash: JSON.parse(result['data']))]
@@ -169,9 +185,10 @@ module Trifle
         end
 
         def scan_query(key:)
-          <<-SQL
-            SELECT at, data FROM #{ping_table_name} WHERE key = '#{key}' ORDER BY at DESC LIMIT 1;
+          query = <<-SQL
+            SELECT at, data FROM #{ping_table_name} WHERE key = $1 ORDER BY at DESC LIMIT 1;
           SQL
+          [query, [key.to_s]]
         end
 
         def self.normalize_joined_identifier(value)
@@ -185,17 +202,29 @@ module Trifle
 
         private
 
-        def format_value(value)
+        def query_params(identifier)
+          identifier.values.map { |value| query_param(value) }
+        end
+
+        def query_param(value)
           case value
-          when String
-            "'#{value}'"
           when Time
-            "'#{value.utc.strftime('%Y-%m-%d %H:%M:%S+00')}'"
+            value.utc.strftime('%Y-%m-%d %H:%M:%S+00')
           when Integer, Float
-            value.to_s
+            value
           else
-            "'#{value}'"
+            value.to_s
           end
+        end
+
+        def numeric_value(key, value)
+          return value.to_s if value.is_a?(Numeric)
+
+          raise ArgumentError, "increment requires numeric value for key #{key.inspect}"
+        end
+
+        def escape_string(value)
+          value.gsub("'", "''")
         end
 
         def build_map_key(data)

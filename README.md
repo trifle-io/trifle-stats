@@ -86,7 +86,6 @@ series.aggregate.sum(path: 'count')
 | **MySQL** | JSON column | MySQL shops |
 | **SQLite** | JSON1 extension | Single-server apps, dev/test |
 | **Process** | In-memory | Testing |
-| **Dummy** | No-op | Disabled analytics |
 
 ## Features
 

@@ -95,10 +95,9 @@ module Trifle
         end
 
         def get(keys:)
-          keys.map do |key|
-            identifier = identifier_for(key)
-            self.class.unpack(hash: fetch_packed_data(identifier))
-          end
+          identifiers = keys.map { |key| identifier_for(key) }
+          data = get_all(identifiers: identifiers)
+          identifiers.map { |identifier| self.class.unpack(hash: data.fetch(lookup_key_for(identifier), {})) }
         end
 
         def ping(key:, values:)
@@ -157,23 +156,42 @@ module Trifle
           execute_prepared(connection, query, args)
         end
 
-        # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-        def fetch_packed_data(identifier)
-          conditions = identifier.keys.map { |column| "#{self.class.quote_identifier(column)} = ?" }.join(' AND ')
+        # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+        def get_all(identifiers:)
+          columns = identifiers.first.keys
+          # Select `at` as a plain string to avoid client time zone casting
+          columns_sql = columns.map do |column|
+            if column == :at
+              "DATE_FORMAT(`at`, '%Y-%m-%d %H:%i:%s.%f') AS at"
+            else
+              self.class.quote_identifier(column)
+            end
+          end.join(', ')
+          conditions = identifiers.map do |identifier|
+            "(#{identifier.keys.map { |column| "#{self.class.quote_identifier(column)} = ?" }.join(' AND ')})"
+          end.join(' OR ')
+
           query = <<~SQL
-            SELECT CAST(`data` AS CHAR) AS data
+            SELECT #{columns_sql}, CAST(`data` AS CHAR) AS data
             FROM #{self.class.quote_identifier(table_name)}
             WHERE #{conditions}
-            LIMIT 1
           SQL
-          packed_data = execute_prepared(client, query, query_values(identifier)).first&.fetch('data', nil)
-          return {} if packed_data.nil? || packed_data.empty?
+          args = identifiers.flat_map { |identifier| query_values(identifier) }
 
-          JSON.parse(packed_data)
-        rescue JSON::ParserError
-          {}
+          execute_prepared(client, query, args).each_with_object({}) do |row, o|
+            identifier = columns.to_h { |column| [column, row[column.to_s]] }
+            o[lookup_key_for(identifier)] = JSON.parse(row['data'])
+          rescue JSON::ParserError
+            nil
+          end
         end
-        # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+        # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+        def lookup_key_for(identifier)
+          identifier.map do |_column, value|
+            value.is_a?(Time) || value.is_a?(DateTime) ? format_time_value(value) : value.to_s
+          end.join('|')
+        end
 
         def inc_query(identifier:, data:)
           upsert_query(

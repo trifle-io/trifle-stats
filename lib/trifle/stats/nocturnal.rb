@@ -87,9 +87,9 @@ module Trifle
           rescue ArgumentError
             # Handle edge cases like Feb 29 in non-leap years
             Time.new(
-              time.year + amount,
+              time.year + offset,
               time.month,
-              [time.day, days_in_month(time.year + amount, time.month)].min,
+              [time.day, days_in_month(time.year + offset, time.month)].min,
               time.hour,
               time.min,
               time.sec,
