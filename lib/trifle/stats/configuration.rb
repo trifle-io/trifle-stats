@@ -42,6 +42,7 @@ module Trifle
 
       def storage
         return driver unless buffer_enabled
+        return driver if driver.respond_to?(:bypass_buffer?) && driver.bypass_buffer?
 
         @storage ||= Trifle::Stats::Buffer.new(
           driver: driver,

@@ -26,6 +26,16 @@ module Trifle
           end
 
           def perform
+            if config.driver.respond_to?(:direct_write)
+              return config.driver.direct_write(
+                operation: :track,
+                key: key,
+                at: @at,
+                values: values,
+                untracked: @untracked
+              )
+            end
+
             payload = {
               keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
               values: values

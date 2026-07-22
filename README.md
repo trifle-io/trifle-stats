@@ -80,6 +80,7 @@ series.aggregate.sum(path: 'count')
 
 | Driver | Backend | Best for |
 |--------|---------|----------|
+| **API** | Trifle Cloud Projects | Hosted metrics without your own database |
 | **Postgres** | JSONB upsert | Most production apps |
 | **Redis** | Hash increment | High-throughput counters |
 | **MongoDB** | Document upsert | Document-oriented stacks |

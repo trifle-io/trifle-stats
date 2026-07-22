@@ -99,3 +99,5 @@ module Trifle
     end
   end
 end
+
+require 'trifle/stats/driver/api'
