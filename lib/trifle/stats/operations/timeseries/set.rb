@@ -26,16 +26,30 @@ module Trifle
           end
 
           def perform
-            if config.driver.respond_to?(:direct_write)
-              return config.driver.direct_write(
-                operation: :assert,
-                key: key,
-                at: @at,
-                values: values,
-                untracked: @untracked
-              )
-            end
+            return direct_write if direct_write?
 
+            buffered_write
+          end
+
+          def tracking_key
+            @untracked ? '__untracked__' : nil
+          end
+
+          private
+
+          def direct_write?
+            config.driver.respond_to?(:direct_write)
+          end
+
+          def direct_write
+            config.driver.direct_write(**direct_payload)
+          end
+
+          def direct_payload
+            { operation: :assert, key: key, at: @at, values: values, untracked: @untracked }
+          end
+
+          def buffered_write
             payload = {
               keys: config.granularities.map { |granularity| key_for(granularity: granularity) },
               values: values
@@ -47,12 +61,6 @@ module Trifle
               config.storage.set(**payload)
             end
           end
-
-          def tracking_key
-            @untracked ? '__untracked__' : nil
-          end
-
-          private
 
           def localized_time(time)
             base_time = time.is_a?(Time) ? time : time.to_time

@@ -60,32 +60,8 @@ module Trifle
         end
 
         def direct_write(operation:, key:, at:, values:, untracked: false)
-          body = gzip(JSON.generate(
-                        operation: operation.to_s,
-                        key: key,
-                        at: at.to_time.iso8601(6),
-                        values: values,
-                        untracked: untracked
-                      ))
-          request = Net::HTTP::Post.new(ENDPOINT)
-          request['Authorization'] = "Bearer #{token}"
-          request['X-Trifle-Source-Id'] = project_id
-          request['Content-Type'] = 'application/json'
-          request['Accept'] = 'application/json'
-          request['Content-Encoding'] = 'gzip'
-          request['User-Agent'] = "trifle-stats-ruby/#{Trifle::Stats::VERSION}"
-          request.body = body
-
-          response = @transport.call(uri: ENDPOINT, request: request, timeout: TIMEOUT)
-          return true if response.code.to_i.between?(200, 299)
-
-          response_body = response.body.to_s.byteslice(0, ERROR_BODY_LIMIT)
-          raise Error.new(
-            "Trifle API returned HTTP #{response.code}",
-            status: response.code.to_i,
-            response_body: response_body,
-            retry_after: response['Retry-After']
-          )
+          payload = api_payload(operation, key, at, values, untracked)
+          deliver(build_request(payload))
         rescue Error
           raise
         rescue StandardError => e
@@ -113,6 +89,49 @@ module Trifle
         end
 
         private
+
+        def api_payload(operation, key, at, values, untracked)
+          {
+            operation: operation.to_s,
+            key: key,
+            at: at.to_time.iso8601(6),
+            values: values,
+            untracked: untracked
+          }
+        end
+
+        def build_request(payload)
+          request = Net::HTTP::Post.new(ENDPOINT, request_headers)
+          request.body = gzip(JSON.generate(payload))
+          request
+        end
+
+        def request_headers
+          {
+            'Authorization' => "Bearer #{token}",
+            'X-Trifle-Source-Id' => project_id,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'Content-Encoding' => 'gzip',
+            'User-Agent' => "trifle-stats-ruby/#{Trifle::Stats::VERSION}"
+          }
+        end
+
+        def deliver(request)
+          response = @transport.call(uri: ENDPOINT, request: request, timeout: TIMEOUT)
+          return true if response.code.to_i.between?(200, 299)
+
+          raise_response_error(response)
+        end
+
+        def raise_response_error(response)
+          raise Error.new(
+            "Trifle API returned HTTP #{response.code}",
+            status: response.code.to_i,
+            response_body: response.body.to_s.byteslice(0, ERROR_BODY_LIMIT),
+            retry_after: response['Retry-After']
+          )
+        end
 
         def gzip(value)
           output = StringIO.new
